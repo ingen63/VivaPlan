@@ -1262,7 +1262,7 @@ impl TaxMode {
     }
 }
 
-/// #63: Denomination for the church tax.
+/// #63: Denomination (church tax).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Church {
@@ -1281,7 +1281,7 @@ pub enum Church {
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct TaxLocation {
-    /// Canton abbreviation, for example «ZH».
+    /// Canton abbreviation, e.g. «ZH».
     #[serde(default)]
     pub canton: String,
     /// BFS number of the municipality.
@@ -1289,6 +1289,26 @@ pub struct TaxLocation {
     pub municipality: Option<u32>,
     #[serde(default)]
     pub church: Church,
+    /// #285: tax multipliers entered by hand («laut meiner Steuerrechnung»); each one given replaces that of the tax
+    /// data, for income and wealth.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub multipliers: Option<ManualMultipliers>,
+}
+
+/// #285: Tax multipliers of a place of residence entered by hand, as shares (0.95 = 95 %, units such as 2.975 as
+/// they are); a missing one comes from the tax data. `church` applies to the chosen denomination.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ManualMultipliers {
+    /// Canton.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub canton: Option<f64>,
+    /// Municipality.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub municipal: Option<f64>,
+    /// Church.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub church: Option<f64>,
 }
 
 /// #151: Change of the place of residence: from `from` the place `place` applies (until the next row).

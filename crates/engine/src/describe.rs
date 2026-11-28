@@ -172,12 +172,28 @@ impl Fields {
             }
             groups.entry(group.to_string()).or_default().push(row);
         }
+        // #285: a group that repeats all rows of an earlier group (a further place of residence repeats the place of
+        // residence) names that group instead, so that the list stays small (#219).
+        let names: Vec<String> = groups.keys().cloned().collect();
+        for (i, b) in names.iter().enumerate() {
+            let Some(a) = names[..i]
+                .iter()
+                .find(|a| groups[*a].len() >= 2 && groups[*a].iter().all(|r| groups[b].contains(r)))
+            else {
+                continue;
+            };
+            let shared = groups[a].clone();
+            let rows = groups.get_mut(b).expect("group of the list");
+            rows.retain(|r| !shared.contains(r));
+            rows.insert(0, format!("= {a}"));
+        }
         Fields {
             notes: vec![
                 "Set with vivaplan set <plan> <path>=<value> or in an experiment (set, vary); * is a list index.",
                 "type series: a course over time (section series); one step with path@<point in time>.",
                 "Meanings: vivaplan describe fields; full texts and structure: vivaplan schema.",
                 "Values a|b with the labels of the app: describe choices.",
+                "= <group>: the fields of that group.",
             ],
             units: UNIT_LEGEND.iter().map(|&(u, m)| item(u, m)).collect(),
             row: if meanings {
@@ -445,6 +461,9 @@ pub const UNITS: &[(&str, &str, &str)] = &[
     ("taxes.investmentYield.bonds", "rate/year", "0..1"),
     ("taxes.investmentYield.stocks", "rate/year", "0..1"),
     ("taxes.location.municipality", "count", "BFS number"),
+    ("taxes.location.multipliers.canton", "factor", "0..10"),
+    ("taxes.location.multipliers.church", "factor", "0..10"),
+    ("taxes.location.multipliers.municipal", "factor", "0..10"),
     ("taxes.multiplier", "factor", ">= 0"),
     ("taxes.oneOffDeductions.*.amount", "CHF", ">= 0"),
     ("taxes.oneOffDeductions.*.year", "year", ""),
@@ -455,6 +474,9 @@ pub const UNITS: &[(&str, &str, &str)] = &[
     ("taxes.propertyGain.maxShare", "share", "0..1"),
     ("taxes.propertyGain.reduction", "share", "0..1"),
     ("taxes.relocations.*.municipality", "count", "BFS number"),
+    ("taxes.relocations.*.multipliers.canton", "factor", "0..10"),
+    ("taxes.relocations.*.multipliers.church", "factor", "0..10"),
+    ("taxes.relocations.*.multipliers.municipal", "factor", "0..10"),
     ("taxes.wealthDeductions.*.amount", "CHF", ">= 0"),
     ("wealth.bonds", "CHF", ">= 0"),
     ("wealth.cash", "CHF", ">= 0"),
@@ -751,7 +773,7 @@ pub const MEANINGS: &[(&str, &str)] = &[
         "taxes.propertyGainOwn",
         "Own property gain tax instead of the canton's.",
     ),
-    ("taxes.relocations.*.church", "Denomination for the church tax."),
+    ("taxes.relocations.*.church", "Denomination (church tax)."),
     ("taxes.relocations.*.from", "Move from (milestone id, age or YYYY-MM)."),
     ("taxes.wealth", "Tax table for wealth: [from amount, rate]."),
     (

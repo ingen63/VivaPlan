@@ -16,6 +16,7 @@ fn loc(canton: &str, bfs: u32) -> TaxLocation {
         canton: canton.into(),
         municipality: Some(bfs),
         church: Church::None,
+        multipliers: None,
     }
 }
 

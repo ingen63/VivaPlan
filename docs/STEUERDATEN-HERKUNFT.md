@@ -104,7 +104,7 @@ Eintrag nennt seine Quelle und die Belegdatei (Feld `beleg`):
 
 Festgelegte Annahmen (ohne Wert aus fremder Quelle):
 - GE und NE: keine Kirchensteuer, weil die Kirchenabgabe freiwillig ist (GE «contribution religieuse volontaire», NE
-  Konkordat); BL vorerst ohne Kirchensteuer (#314); BS römisch- und christkatholisch sowie VS Sion, Savièse, Törbel,
+  Konkordat); BL ohne Kirchensteuer, weil sie dort in Prozent des Einkommens erhoben wird (#314, nicht umgesetzt); BS römisch- und christkatholisch sowie VS Sion, Savièse, Törbel,
   Vouvry ohne Kirchensteuer, weil kein amtlicher Satz 2026 gefunden wurde. Hinweis in der Hilfe.
 - FR: 9 Gemeinden mit geändertem Koeffizienten 2026 (Lully, Meyriez, Ursy, Vuisternens-devant-Romont, Villaz,
   La Roche, Muntelier, Brünisried, La Verrerie) mit dem Wert 2025 der offenen Daten, weil die Liste 2026 nicht

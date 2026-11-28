@@ -969,8 +969,10 @@ Vermögenssteuer des Steuerjahres (Jahreswerte real, ohne Kapitalbezug und Grund
 erste volle Kalenderjahr (`first`) und das erste volle Kalenderjahr, dessen Januar nicht vor `Simulator::retire_at`
 liegt (`retired`); `retired` fehlt, wenn die Pensionierung nicht nach dem Start liegt oder das Jahr dasselbe ist. Die
 Steuerdatei `crates/engine/data/steuern-2026.json` erzeugt `tools/steuerdaten/build.py` aus den
-Quelldateien nach den Gesetzen (`tools/steuerdaten/quellen/<Jahr>/`, #286–#292, #296; Steuerfüsse noch aus den
-ESTV-Grunddaten) (Aufbau und Ablauf für ein neues Steuerjahr: `tools/steuerdaten/README.md`); `taxdata.rs` bettet sie
+Quelldateien nach den Gesetzen (`tools/steuerdaten/quellen/<Jahr>/`, #286–#292, #296) und den Steuerfüssen aus den
+Veröffentlichungen der Kantone (#285; Nachweis der Herkunft `tools/steuerdaten/nachweis.py`,
+[STEUERDATEN-HERKUNFT.md](STEUERDATEN-HERKUNFT.md)) (Aufbau und Ablauf für ein neues Steuerjahr:
+`tools/steuerdaten/README.md`); `taxdata.rs` bettet sie
 ein (`BUILTIN`).
 
 - **Tarif und Abzüge getrennt:** Die Einkommenskurven `[steuerbares Einkommen, Satz]` sind der Tarif der einfachen

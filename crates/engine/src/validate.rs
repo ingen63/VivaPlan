@@ -203,6 +203,18 @@ fn check_tax_location(v: &mut Issues, loc: Option<&crate::model::TaxLocation>, r
     };
     // Row number as in the user interface: the first row is `taxes.location`.
     let n = row.map_or(1, |i| i + 2);
+    // #285 (b1): multipliers entered by hand between 0 and 10, like the multipliers of the own tables
+    if let Some(h) = loc.and_then(|l| l.multipliers.as_ref()) {
+        for (field, value) in [("canton", h.canton), ("municipal", h.municipal), ("church", h.church)] {
+            if value.is_some_and(|v| !(v.is_finite() && (0.0..=10.0).contains(&v))) {
+                v.err_at(
+                    "taxes",
+                    path(&format!("multipliers.{field}")),
+                    msg!(tax_multiplier_range),
+                );
+            }
+        }
+    }
     let canton = loc.map(|l| l.canton.as_str()).unwrap_or("");
     let municipality = loc.and_then(|l| l.municipality);
     // #272/AK1, AK4: the canton follows from the municipality; without both the municipality is missing (new plans)

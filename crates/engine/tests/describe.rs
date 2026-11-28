@@ -28,22 +28,42 @@ fn whole() -> &'static Catalog {
     })
 }
 
-/// Paths of the field list of the catalog.
+/// Paths of the field list of the catalog; a row `= <group>` (#285) stands for the fields of that group.
 fn catalog_paths(c: &Catalog) -> BTreeSet<String> {
     let f = c.fields.as_ref().expect("fields");
+    let names = |g: &str| -> Vec<String> {
+        let mut out = vec![];
+        for r in &f.groups[g] {
+            match r.strip_prefix("= ") {
+                Some(other) => out.extend(f.groups[other].iter().map(|r| r.split_once(':').unwrap().0.to_string())),
+                None => out.push(r.split_once(':').unwrap().0.to_string()),
+            }
+        }
+        out
+    };
     f.groups
-        .iter()
-        .flat_map(|(g, rows)| {
-            rows.iter().map(move |r| {
-                let name = r.split_once(':').unwrap().0;
-                if g.is_empty() {
-                    name.to_string()
-                } else {
-                    format!("{g}.{name}")
-                }
-            })
+        .keys()
+        .flat_map(|g| {
+            names(g)
+                .into_iter()
+                .map(move |name| if g.is_empty() { name } else { format!("{g}.{name}") })
         })
         .collect()
+}
+
+/// #285: groups that repeat an earlier group name it; the fields stay complete.
+#[test]
+fn issue_285_repeated_groups_named() {
+    let f = whole().fields.as_ref().expect("fields");
+    assert_eq!(f.groups["taxes.relocations.*"][0], "= taxes.location");
+    assert!(f.groups["taxes.relocations.*"].iter().any(|r| r.starts_with("from:")));
+    assert_eq!(
+        f.groups["taxes.relocations.*.multipliers"],
+        vec!["= taxes.location.multipliers"]
+    );
+    assert!(f.groups["taxes.location.multipliers"]
+        .iter()
+        .any(|r| r.starts_with("municipal: number, factor")));
 }
 
 // ---------------------------------------------------------------------------------------------

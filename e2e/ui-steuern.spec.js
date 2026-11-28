@@ -1863,3 +1863,39 @@ test.describe("Taxable income next to the taxes (#281)", () => {
     await noErrors(page, errors);
   });
 });
+
+test.describe("Tax multipliers by hand (#285)", () => {
+  test("AK1, AK3, AK4: check box per place of residence, fields replace the multipliers of the tax data, checked range", async ({ page }) => {
+    const errors = await open(page);
+    await toLocation(page);
+    await choose(page, "ZH", "Zürich");
+    await previewIdle(page);
+    // AK4: without the check box the plan has no `multipliers`
+    await expect(page.locator("#tax-hand")).not.toBeChecked();
+    await expect(page.locator("#tax-hand-fields")).toHaveCount(0);
+    expect(await page.evaluate(() => "multipliers" in state.taxes.location)).toBe(false);
+    const before = await page.evaluate(() => taxEstimates.find(e => e.kind === "first").amount);
+    await page.locator("#tax-hand").click();
+    await expect(page.locator("#tax-hand-fields")).toBeVisible();
+    await expect(page.locator("#tax-hand-hint")).toContainText("leeres Feld lässt den Wert der Steuerdaten stehen");
+    // A higher municipal multiplier raises the estimated tax; empty fields keep the tax data
+    const municipal = page.locator('input[data-path="taxes.location.multipliers.municipal"]');
+    await municipal.fill("200");
+    await municipal.press("Tab");
+    await previewIdle(page);
+    expect(await page.evaluate(() => state.taxes.location.multipliers)).toEqual({ municipal: 2 });
+    expect(await page.evaluate(() => taxEstimates.find(e => e.kind === "first").amount)).toBeGreaterThan(before);
+    // Outside 0 to 10 (1100 %) is an error at the field
+    await municipal.fill("1100");
+    await municipal.press("Tab");
+    await previewIdle(page);
+    await expect(page.locator('[data-path="taxes.location.multipliers.municipal"]').locator("xpath=ancestor::label[1]")).toContainText("zwischen 0 und 10");
+    // Further places of residence have their own check box; unchecking removes the multipliers
+    await page.locator('button[data-action="loc-add"]').click();
+    await expect(page.locator("#tax-hand-1")).not.toBeChecked();
+    await page.locator("#tax-hand").click();
+    await previewIdle(page);
+    expect(await page.evaluate(() => "multipliers" in state.taxes.location)).toBe(false);
+    await noErrors(page, errors);
+  });
+});

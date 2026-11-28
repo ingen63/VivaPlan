@@ -5,7 +5,7 @@
 //! are made up. Compared are federal, cantonal and municipal tax; poll taxes are not part of the income tax.
 //! Reference values for working persons are still missing (#63/AK6, open part).
 
-use engine::model::{Church, Plan, TaxLocation, TaxMode};
+use engine::model::{Church, ManualMultipliers, Plan, TaxLocation, TaxMode};
 use engine::sim::{MonthRecord, SimResult, Simulator};
 use engine::tax;
 use engine::taxdata::{self, combine};
@@ -225,6 +225,7 @@ fn loc(canton: &str, bfs: u32, church: Church) -> TaxLocation {
         canton: canton.into(),
         municipality: Some(bfs),
         church,
+        multipliers: None,
     }
 }
 
@@ -1116,4 +1117,140 @@ fn issue_143_ak5_warning_when_tax_data_outdated() {
     let now: i32 = engine::beta::today()[..4].parse().unwrap();
     let warned = validate(&plan).iter().any(|i| i.message.code() == "tax_data_outdated");
     assert_eq!(warned, now > data_year + 1);
+}
+
+fn by_hand(canton: Option<f64>, municipal: Option<f64>, church: Option<f64>) -> Option<ManualMultipliers> {
+    Some(ManualMultipliers {
+        canton,
+        municipal,
+        church,
+    })
+}
+
+/// #285/AK1 (b1): Multipliers entered by hand («laut meiner Steuerrechnung») replace those of the tax data for income
+/// and wealth; a missing one comes from the tax data; the church multiplier applies to the chosen denomination only.
+#[test]
+fn issue_285_ak1_multipliers_by_hand() {
+    let data = taxdata::builtin();
+    let taxes = |l: &TaxLocation| {
+        let r = data.resolve(l, false).unwrap();
+        (
+            tax::tax(&r.cantonal, 100_000.0, 1.0),
+            tax::tax(&r.wealth, 1_000_000.0, 1.0),
+            tax::tax(&r.capital, 500_000.0, 1.0),
+        )
+    };
+    // simple tax of the canton (multiplier 100 %): Zurich has no municipal tariff of its own
+    let mut simple = loc("ZH", 261, Church::None);
+    simple.multipliers = by_hand(Some(1.0), Some(0.0), None);
+    let (s_income, s_wealth, _) = taxes(&simple);
+    // Zurich 2026: canton 95 %, municipality 119 %, Roman Catholic 10 %: the same as without input
+    let plain = loc("ZH", 261, Church::Catholic);
+    let mut same = plain.clone();
+    same.multipliers = by_hand(Some(0.95), Some(1.19), Some(0.10));
+    assert_eq!(taxes(&plain), taxes(&same));
+    let (income, wealth, _) = taxes(&plain);
+    assert!((income - s_income * (0.95 + 1.19 + 0.10)).abs() < 1.0, "{income}");
+    assert!((wealth - s_wealth * (0.95 + 1.19 + 0.10)).abs() < 1.0, "{wealth}");
+    // only the municipality by hand: canton and church from the tax data; it applies to lump sums too
+    let mut municipal = plain.clone();
+    municipal.multipliers = by_hand(None, Some(1.50), None);
+    let (income, wealth, capital) = taxes(&municipal);
+    assert!((income - s_income * (0.95 + 1.50 + 0.10)).abs() < 1.0, "{income}");
+    assert!((wealth - s_wealth * (0.95 + 1.50 + 0.10)).abs() < 1.0, "{wealth}");
+    assert!(capital > taxes(&plain).2);
+    // the church multiplier by hand without denomination has no effect
+    let mut none = loc("ZH", 261, Church::None);
+    let without = taxes(&none);
+    none.multipliers = by_hand(None, None, Some(0.30));
+    assert_eq!(taxes(&none), without);
+    // property gain tax in the canton of residence: canton and municipality by hand
+    assert_eq!(data.property_gain(&municipal, None).unwrap().1, 0.95 + 1.50);
+}
+
+/// #285/AK1 (b1): Multipliers by hand outside 0 to 10 are an error at their field, also in a further place of
+/// residence; plans without them stay as they were.
+#[test]
+fn issue_285_ak1_multipliers_by_hand_checked() {
+    let errors = |v: &Value| -> Vec<(&'static str, Option<String>)> {
+        let plan: Plan = serde_json::from_value(v.clone()).unwrap();
+        validate(&plan)
+            .into_iter()
+            .filter(|i| i.severity == Severity::Error && i.section == "taxes")
+            .map(|i| (i.message.code(), i.field))
+            .collect()
+    };
+    let mut v = base(false);
+    v["taxes"]["location"]["multipliers"] = json!({ "municipal": 1.5, "church": 0.1 });
+    assert!(errors(&v).is_empty());
+    v["taxes"]["location"]["multipliers"] = json!({ "canton": -0.1, "municipal": 12.0 });
+    assert_eq!(
+        errors(&v),
+        vec![
+            ("tax_multiplier_range", Some("taxes.location.multipliers.canton".into())),
+            (
+                "tax_multiplier_range",
+                Some("taxes.location.multipliers.municipal".into())
+            )
+        ]
+    );
+    v["taxes"]["location"].as_object_mut().unwrap().remove("multipliers");
+    v["taxes"]["relocations"] = json!([{ "from": "2041-01", "canton": "BE", "municipality": 351, "church": "none",
+                                         "multipliers": { "church": 11.0 } }]);
+    assert_eq!(
+        errors(&v),
+        vec![(
+            "tax_multiplier_range",
+            Some("taxes.relocations.0.multipliers.church".into())
+        )]
+    );
+}
+
+/// #285/AK3: Without tax multipliers for the place of residence (no municipality, a municipality the tax data do not
+/// know) the check says what is missing; the mode «Eigene Tabellen» stays usable.
+#[test]
+fn issue_285_ak3_missing_multipliers_reported_own_tables_usable() {
+    let errors = |v: &Value| -> Vec<(&'static str, Option<String>)> {
+        let plan: Plan = serde_json::from_value(v.clone()).unwrap();
+        validate(&plan)
+            .into_iter()
+            .filter(|i| i.severity == Severity::Error)
+            .map(|i| (i.message.code(), i.field))
+            .collect()
+    };
+    let mut v = base(false);
+    v["taxes"]["location"] = json!({ "canton": "ZH", "church": "none" });
+    assert_eq!(
+        errors(&v),
+        vec![("tax_municipality_missing", Some("taxes.location.municipality".into()))]
+    );
+    v["taxes"]["location"] = json!({ "canton": "ZH", "municipality": 999_999, "church": "none" });
+    assert_eq!(
+        errors(&v),
+        vec![(
+            "tax_municipality_not_in_canton",
+            Some("taxes.location.municipality".into())
+        )]
+    );
+    // own tables: no place of residence needed, the plan computes
+    v["taxes"]["mode"] = json!("own");
+    v["taxes"].as_object_mut().unwrap().remove("location");
+    assert!(errors(&v).is_empty());
+    assert!(run(&v).records.iter().all(|r| r.taxes.is_finite()));
+}
+
+/// #285/AK4: A plan with municipality and denomination from before (without multipliers by hand) opens without loss:
+/// saved again it is unchanged, and it computes with the tax multipliers of the cantonal sources.
+#[test]
+fn issue_285_ak4_existing_plan_unchanged() {
+    let v = base(true);
+    let plan: Plan = serde_json::from_value(v.clone()).unwrap();
+    let again = serde_json::to_value(&plan).unwrap();
+    assert_eq!(again["taxes"]["location"], v["taxes"]["location"]);
+    assert!(again["taxes"]["location"].get("multipliers").is_none());
+    let r = taxdata::builtin()
+        .resolve(plan.taxes.location.as_ref().unwrap(), true)
+        .unwrap();
+    assert!(tax::tax(&r.cantonal, 100_000.0, 1.0) > 0.0);
+    assert!(run(&v).records.iter().any(|r| r.taxes > 0.0));
 }

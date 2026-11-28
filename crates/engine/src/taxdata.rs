@@ -28,7 +28,7 @@ use std::sync::OnceLock;
 
 use serde::{Deserialize, Serialize};
 
-use crate::model::{Church, DeductionRule, PropertyGainTax, TaxLocation};
+use crate::model::{Church, DeductionRule, ManualMultipliers, PropertyGainTax, TaxLocation};
 use crate::tax::{rate_at, tax_indexed};
 use crate::{Error, Result};
 
@@ -316,6 +316,34 @@ pub fn builtin() -> &'static TaxData {
     DATA.get_or_init(|| serde_json::from_str(BUILTIN).expect("mitgelieferte Steuerdatei ist gültig"))
 }
 
+/// Index of the church tax of the denomination in [`Multipliers`].
+fn church_index(c: Church) -> Option<usize> {
+    match c {
+        Church::None => None,
+        Church::Reformed => Some(2),
+        Church::Catholic => Some(3),
+        Church::ChristCatholic => Some(4),
+    }
+}
+
+/// #285: the multipliers of the municipality with those entered by hand put in (canton, municipality, church of the
+/// denomination).
+fn by_hand(m: &Multipliers, hand: Option<&ManualMultipliers>, c: Church) -> Multipliers {
+    let mut m = *m;
+    if let Some(h) = hand {
+        if let Some(v) = h.canton {
+            m[0] = v;
+        }
+        if let Some(v) = h.municipal {
+            m[1] = v;
+        }
+        if let (Some(v), Some(i)) = (h.church, church_index(c)) {
+            m[i] = v;
+        }
+    }
+    m
+}
+
 /// Multiplier of the church tax for the denomination.
 fn church(m: &Multipliers, c: Church) -> f64 {
     match c {
@@ -351,7 +379,8 @@ impl TaxData {
                 canton = canton.id.clone()
             ))
         })?;
-        let (ek, vm) = (&muni.3, &muni.4);
+        let hand = loc.multipliers.as_ref();
+        let (ek, vm) = (&by_hand(&muni.3, hand, loc.church), &by_hand(&muni.4, hand, loc.church));
         let kt = canton.income.get(married);
         let factor = canton.municipal_index.iter().find(|m| m.0 == bfs).map_or(1.0, |m| m.1);
         let gem = stretch(canton.municipal_income.as_ref().map_or(kt, |c| c.get(married)), factor);
@@ -401,7 +430,10 @@ impl TaxData {
             .municipality
             .and_then(|b| self.municipality(b))
             .filter(|m| m.2 == c.id);
-        let multiplier = home.map_or(c.gain_multiplier, |m| m.3[0] + m.3[1]);
+        let multiplier = home.map_or(c.gain_multiplier, |m| {
+            let m = by_hand(&m.3, loc.multipliers.as_ref(), loc.church);
+            m[0] + m[1]
+        });
         Ok((c.property_gain.clone(), multiplier))
     }
 }

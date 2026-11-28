@@ -1659,6 +1659,9 @@ function locRow({ path, loc, from }, i) {
     <label class="field"><span>${tr("taxes.canton")}</span><span class="computed" style="padding:8px 0" id="${id("tax-canton")}" data-path="${path}.canton">${canton ? esc(canton.name) : "–"}</span></label>
     <label class="field"><span>${tr("taxes.church")}</span>${Sel(`${path}.church`, CHURCH, { rerender: 1 })}</label></div>
     ${muni ? `<p class="hint" id="${id("tax-multipliers")}">${multiplierText(tr("taxes.income"), muni[2], loc.church)}; ${multiplierText(tr("taxes.wealth"), muni[3], loc.church)}.</p>` : ""}
+    <label class="check"><input type="checkbox" id="${id("tax-hand")}" data-action="loc-hand" data-loc="${path}" ${loc.multipliers ? "checked" : ""}> ${tr("taxes.byHand")}</label>
+    ${loc.multipliers ? `<div class="grid3" id="${id("tax-hand-fields")}">${F(`${path}.multipliers.canton`, tr("taxes.byHandCanton"), "pctopt")}${F(`${path}.multipliers.municipal`, tr("taxes.byHandMunicipal"), "pctopt")}${F(`${path}.multipliers.church`, tr("taxes.byHandChurch"), "pctopt")}</div>
+    <p class="hint" id="${id("tax-hand-hint")}">${tr("taxes.byHandHint")}</p>` : ""}
     ${earned?.approx ? `<p class="hint warn" id="${id("tax-earned-approx")}">⚠ ${tr("taxes.earnedApprox", { max: fmtInt(earned.max) })}</p>` : ""}
     ${canton ? `<p class="hint" id="${id("tax-capital-rule")}">${tr("taxes.capitalRule", { rule: tr(`capitalRule.${canton.id}`) })}</p>` : ""}
     ${canton?.capitalApprox ? `<p class="hint warn" id="${id("tax-capital-approx")}">⚠ ${tr("taxes.capitalApprox", { note: tr(`capitalApprox.${canton.id}`) })}</p>` : ""}</div>`;
@@ -3070,6 +3073,12 @@ const ACTIONS = {
   "loc-add": () => {
     const rows = locRows(), last = rows[rows.length - 1], lm = refMonth(last.from ?? "start");
     (state.taxes.relocations ??= []).push({ from: i2ym(Math.max(startM(), Number.isFinite(lm) ? lm : startM()) + 12), canton: last.loc.canton ?? "", church: last.loc.church ?? "none" });
+    markDirty(); renderSection();
+  },
+  // #285: tax multipliers by hand (from the tax bill): the check box adds or removes `multipliers` of the row
+  "loc-hand": d => {
+    const loc = getP(d.loc) ?? (setP(d.loc, {}), getP(d.loc));
+    if (loc.multipliers) delete loc.multipliers; else loc.multipliers = {};
     markDirty(); renderSection();
   },
   "loc-del": d => {
