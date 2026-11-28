@@ -360,6 +360,8 @@ def read_table(path, spec):
             values[GROUPS.index(g)] = v
         if name and name not in out:
             out[name] = [canton] + values
+        elif name:  # a further row of the same municipality (SG: churches only in the row of the first Kirchgemeinde)
+            out[name] = [v if v is not None else w for v, w in zip(out[name], [canton] + values)]
     return out
 
 
@@ -384,62 +386,181 @@ def read_blocks(text, spec):
             values[1 + group] = round(number(value) * spec.get("scale", 0.01), 6)
             for g, v in spec.get("fixed", {}).items():
                 values[1 + GROUPS.index(g)] = v
-            out.setdefault(names[row], values)
+            name = spec.get("aliases", {}).get(names[row], names[row])
+            out.setdefault(name, values)
         row += 1
     return out
 
 
-def read_cantons(path, folder, reference, only=None):
-    """[(canton, {bfs: (name, values, notes)}, unmatched, notes)] for every canton described in the JSON file `path`
-    whose source file lies in `folder`."""
+def read_register(path):
+    """[[bfs, name, canton]] of the official register of the municipalities of the BFS (snapshot as CSV of
+    agvchapp.bfs.admin.ch, «Amtliches Gemeindeverzeichnis»): the rows of level 3, the canton from the parents."""
+    with open(path, encoding="utf-8-sig") as f:
+        rows = list(csv.DictReader(f))
+    by_code = {r["HistoricalCode"]: r for r in rows if r["Level"] != "3"}  # codes repeat across the levels
+
+    def canton(r):
+        while r["Level"] != "1":
+            r = by_code[r["Parent"]]
+        return r["ShortName"]
+
+    return sorted([int(r["BfsCode"]), r["Name"], canton(r)] for r in rows if r["Level"] == "3")
+
+
+def read_source(canton, spec, folder, ref, year):
+    """({bfs: (name, values, notes)}, unmatched names, notes) of one source of a canton (`reader` in the spec: `table`
+    by default, or one of the readers of ZH, BE, GE, VD, FR and the FR parishes), names matched with `ref`."""
+    path = os.path.join(folder, spec["file"])
+    reader = spec.get("reader", "table")
+    if reader == "zh":
+        return read_zh(path, spec["canton"]), [], []
+    if reader == "fr":
+        return read_fr(path, spec["canton"], year)[0], [], []
+    sections = {}
+    if reader == "be":
+        rows, quota, sections = read_be(pdf_lines(path), year)
+        rows = {BE_TYPOS.get(k, k): v for k, v in rows.items()}
+    elif reader == "ge":
+        rows = read_ge(path, spec["canton"])
+    elif reader == "vd":
+        rows = read_vd(path, spec["canton"])
+    elif reader == "fr_parishes":
+        group = 1 + GROUPS.index(spec["group"])
+        rows = {}
+        for name, share in read_fr_parishes(path, spec.get("column", 2)).items():
+            rows[name] = [spec["canton"], None, None, None, None]
+            rows[name][group] = share
+    else:
+        rows = read_table(path, spec)
+    if spec.get("suffix_names"):
+        # two columns run together: «Biberist Bolken Balm bei Günsberg 100 100» belongs to the longest end of the
+        # text that is the name of a municipality
+        known = {keys(m[1])[0] for m in ref}
+        renamed = {}
+        for name, values in rows.items():
+            w = name.split()
+            hit = next((" ".join(w[i:]) for i in range(len(w))
+                        if (keys(" ".join(w[i:])) or [None])[0] in known), name)
+            renamed.setdefault(hit, values)
+        rows = renamed
+    matched, unmatched = match_names(rows, ref)
+    for bfs, (name, values, notes) in matched.items():
+        notes.extend(spec.get("notes", []))
+        if name in sections:
+            notes.append("church rates of the main part taken; other rates in " + ", ".join(sections[name]))
+    if spec.get("parts") and unmatched:
+        # rows for parts of a municipality (e.g. one row per Kirchgemeinde): not a gap, the whole is compared
+        for bfs, (name, values, notes) in matched.items():
+            parts = [u for u in unmatched if keys(u)[2] == keys(name)[2]]
+            if parts:
+                notes.append("further rows for parts: " + ", ".join(parts))
+        unmatched = [u for u in unmatched if all(keys(u)[2] != keys(n)[2] for n, _, _ in matched.values())]
+    notes = []
+    if spec.get("subrows") and unmatched:
+        # rows of Kirchgemeinden or parts that are not municipalities of their own
+        notes.append("rows not compared (Kirchgemeinden or parts): " + ", ".join(unmatched))
+        unmatched = []
+    return matched, unmatched, notes
+
+
+def merge_into(target, source):
+    """Puts the shares a further source has (not None) into the rows of `target` ({bfs: values})."""
+    for bfs, (_, values, _) in source.items():
+        if bfs in target:
+            for i in range(1, 5):
+                if values[i] is not None:
+                    target[bfs][i] = values[i]
+
+
+def read_canton(canton, spec, folder, ref, year, exceptions=None):
+    """(income {bfs: (name, values, notes)}, wealth {bfs: values}, unmatched, notes) of a canton: the main source,
+    further sources for single shares (`also`, e.g. the church tax in a list of its own) and the wealth tax
+    multipliers (`wealth`: the same as for income unless it names another cantonal multiplier `canton`, further
+    sources `also` or `fixed` shares)."""
+    matched, unmatched, notes = read_source(canton, spec, folder, ref, year)
+    # exceptions first, so that further sources (church lists) also reach a municipality the main source lacks
+    apply_exceptions(canton, matched, {canton: (exceptions or {}).get(canton, {})}, ref, spec.get("canton"))
+    income = {bfs: values for bfs, (_, values, _) in matched.items()}
+    for values in income.values():  # the readers of single cantons do not know `fixed`
+        for g, v in spec.get("fixed", {}).items():
+            values[1 + GROUPS.index(g)] = v
+    for extra in spec.get("also", []):
+        merge_into(income, read_source(canton, dict(extra, canton=spec.get("canton")), folder, ref, year)[0])
+    wealth = {bfs: list(values) for bfs, values in income.items()}
+    w = spec.get("wealth", {})
+    for values in wealth.values():
+        if "canton" in w:
+            values[0] = w["canton"]
+        for g, v in w.get("fixed", {}).items():
+            values[1 + GROUPS.index(g)] = v
+    for extra in w.get("also", []):
+        merge_into(wealth, read_source(canton, dict(extra, canton=w.get("canton", spec.get("canton"))), folder,
+                                       ref, year)[0])
+    for bfs, (values, _) in (exceptions or {}).get(canton, {}).items():  # exceptions win over further sources
+        for target in (income.get(bfs), wealth.get(bfs)):
+            if target is not None:
+                for g, v in values.items():
+                    target[1 + GROUPS.index(g)] = v
+    return matched, wealth, unmatched, notes
+
+
+def read_specs(path):
     with open(path, encoding="utf-8") as f:
-        specs = json.load(f)
+        return {c: s for c, s in json.load(f).items() if not c.startswith("_")}
+
+
+def collect(specs, folder, register, year, exceptions=None, only=None):
+    """[(canton, income {bfs: (name, values, notes)}, wealth {bfs: values}, unmatched, notes)] of all cantons
+    described in `specs` whose source file lies in `folder`, with the exceptions put in."""
     out = []
     for canton, spec in sorted(specs.items()):
-        source = os.path.join(folder, spec["file"])
-        if canton.startswith("_") or (only and canton not in only) or not os.path.exists(source):
+        if (only and canton not in only) or not os.path.exists(os.path.join(folder, spec["file"])):
             continue
-        rows, ref = read_table(source, spec), [m for m in reference if m[2] == canton]
-        if spec.get("suffix_names"):
-            # two columns run together (SO): «Biberist Bolken Balm bei Günsberg 100 100» belongs to the longest end
-            # of the text that is the name of a municipality
-            known = {keys(m[1])[0] for m in ref}
-            renamed = {}
-            for name, values in rows.items():
-                w = name.split()
-                hit = next((" ".join(w[i:]) for i in range(len(w))
-                            if (keys(" ".join(w[i:])) or [None])[0] in known), name)
-                renamed.setdefault(hit, values)
-            rows = renamed
-        matched, unmatched = match_names(rows, ref)
-        for bfs, (name, values, notes) in matched.items():
-            notes.extend(spec.get("notes", []))
-        if spec.get("parts") and unmatched:
-            # rows for parts of a municipality (e.g. one row per Kirchgemeinde): not a gap, the whole is compared
-            for bfs, (name, values, notes) in matched.items():
-                parts = [u for u in unmatched if keys(u)[2] == keys(name)[2]]
-                if parts:
-                    notes.append("further rows for parts: " + ", ".join(parts))
-            unmatched = [u for u in unmatched if all(keys(u)[2] != keys(n)[2] for n, _, _ in matched.values())]
-        notes = []
-        if spec.get("subrows") and unmatched:
-            # rows of Kirchgemeinden or parts that are not municipalities of their own
-            notes.append("rows not compared (Kirchgemeinden or parts): " + ", ".join(unmatched))
-            unmatched = []
-        out.append((canton, matched, unmatched, notes))
+        ref = [m for m in register if m[2] == canton]
+        income, wealth, unmatched, notes = read_canton(canton, spec, folder, ref, year, exceptions)
+        out.append((canton, income, wealth, unmatched, notes))
     return out
 
 
-def read_fr_parishes(path):
+def multipliers(collected, register):
+    """(municipalities [bfs, name, canton, income, wealth] of the register sorted by canton and name, report): every
+    municipality of the register needs a source row; a church share no source has counts as 0 and is reported."""
+    rows = {}
+    for canton, income, wealth, _, _ in collected:
+        for bfs, (_, values, notes) in income.items():
+            rows[bfs] = (values, wealth.get(bfs, values), notes)
+    out, report = [], []
+    for bfs, name, canton in register:
+        if bfs not in rows:
+            report.append(f"{canton} {bfs} {name}: no tax multipliers in the sources")
+            continue
+        values, wealth, notes = rows[bfs]
+        if values[1] is None:
+            report.append(f"{canton} {bfs} {name}: no municipal tax multiplier in the sources")
+            continue
+        missing = [CHURCHES[i - 2] for i in range(2, 5) if values[i] is None or wealth[i] is None]
+        if missing:
+            report.append(f"{canton} {bfs} {name}: no rate in the sources for {', '.join(missing)}, 0 taken")
+        clean = lambda v: [0.0 if x is None else round(x, 6) for x in v]  # noqa: E731
+        out.append([bfs, name, canton, clean(values), clean(wealth)])
+    out.sort(key=lambda m: (m[2], m[1]))
+    return out, report
+
+
+def read_fr_parishes(path, column=2):
     """{commune: share} from a PDF of the FR tax administration on the parish tax rates (reformed or Catholic): rows
     «commune | parish | income | wealth | profit | capital» in percent of the cantonal base tax; the income rate of
-    the first parish of a commune (a commune with several parishes: the first listed)."""
+    the first parish of a commune (a commune with several parishes: the first listed); `column` 3 gives the wealth."""
     out = {}
     for line in pdf_lines(path):
         parts = [p.strip() for p in line.split("|") if p.strip()]
-        if len(parts) >= 6 and re.fullmatch(r"\d+(\.\d+)?", parts[2]) and not re.search(r"\d", parts[0]):
-            out.setdefault(parts[0], round(float(parts[2]) / 100, 6))
-    return out
+        first = next((i for i, p in enumerate(parts) if re.fullmatch(r"\d+(\.\d+)?", p)), None)
+        # the parish name is missing where it is the commune itself: the rates then start one place earlier
+        if first in (1, 2) and len(parts) >= first + 4 and not re.search(r"\d", parts[0]):
+            out.setdefault(parts[0], round(float(parts[first + column - 2]) / 100, 6))
+    # «Schmitten | 10.0 …» below «Schmitten (FR) | St. Antoni | …» is a further parish of that commune
+    return {k: v for k, v in out.items()
+            if not any(o != k and "(" in o and keys(o)[0] == keys(k)[0] for o in out)}
 
 
 def read_exceptions(path):
@@ -451,13 +572,16 @@ def read_exceptions(path):
             for canton, rows in data.items() if not canton.startswith("_")}
 
 
-def apply_exceptions(canton, source, exceptions, reference):
-    """Puts the exceptions of a canton into its source rows (also municipalities the source lacks), with a note."""
+def apply_exceptions(canton, source, exceptions, register, cantonal=None):
+    """Puts the exceptions of a canton into its source rows (also municipalities the source lacks, then with the
+    cantonal multiplier `cantonal` or that of another row), with a note."""
     for bfs, (values, origin) in exceptions.get(canton, {}).items():
-        ref = next((m for m in reference if m[0] == bfs), None)
-        if bfs not in source and ref is None:
+        reg = next((m for m in register if m[0] == bfs), None)
+        if bfs not in source and reg is None:
             continue
-        name, row, notes = source.get(bfs, (ref[1], [ref[3][0], None, None, None, None], []))
+        if cantonal is None:
+            cantonal = next(iter(source.values()))[1][0] if source else None
+        name, row, notes = source.get(bfs, (reg[1], [cantonal, None, None, None, None], []))
         row = list(row)
         for g, v in values.items():
             row[1 + GROUPS.index(g)] = v
@@ -467,8 +591,9 @@ def apply_exceptions(canton, source, exceptions, reference):
 LABELS = ("canton", "municipal") + CHURCHES
 
 
-def compare(canton, source, reference):
-    """Differences of the income multipliers of one canton; returns (lines, counts)."""
+def compare(canton, source, reference, column=3, label="", known=()):
+    """Differences of the income (`column` 3) or wealth (4) multipliers of one canton; returns (lines, counts).
+    Shares in `known` (labels such as «reformed») differ on purpose from the reference and are not compared."""
     ref = {m[0]: m for m in reference if m[2] == canton}
     lines, equal = [], 0
     for bfs in sorted(set(ref) | set(source)):
@@ -479,8 +604,10 @@ def compare(canton, source, reference):
         if bfs not in ref:
             lines.append(f"{canton} {bfs} {name}: not in the reference")
             continue
-        diffs = [f"{LABELS[i]} {values[i]:g} (reference {ref[bfs][3][i]:g})"
-                 for i in range(5) if values[i] is not None and abs(values[i] - ref[bfs][3][i]) > TOL]
+        expected = ref[bfs][column]
+        diffs = [f"{label}{LABELS[i]} {values[i]:g} (reference {expected[i]:g})"
+                 for i in range(5) if values[i] is not None and LABELS[i] not in known
+                 and abs(values[i] - expected[i]) > TOL]
         if diffs:
             lines.append(f"{canton} {bfs} {name}: " + ", ".join(diffs))
         else:
@@ -489,9 +616,27 @@ def compare(canton, source, reference):
     return lines, {"reference": len(ref), "source": len(source), "equal": equal}
 
 
+def read_reference(path):
+    """(municipalities [bfs, name, canton, income, wealth], year) of a tax data file (JSON) or of the Excel export
+    «Steuerfüsse» of the ESTV tax calculator (xlsx, only as a local cross-check, #283)."""
+    if path.lower().endswith(".xlsx"):
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import build  # noqa: E402 (next to this file)
+        year, munis = build.read_multipliers(path)
+        return munis, year
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    return data["municipalities"], data.get("year", 2026)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("reference")
+    ap.add_argument("reference", help="tax data file (JSON) or ESTV export (xlsx) to compare with")
+    ap.add_argument("--kantone", help="JSON file describing the sources of the cantons")
+    ap.add_argument("--ordner", default=".", help="folder with the source files named in --kantone")
+    ap.add_argument("--gemeinden", help="BFS register of the municipalities (CSV); default: those of the reference")
+    ap.add_argument("--ausnahmen", help="JSON file with exceptions per municipality")
+    ap.add_argument("--nur", action="append", help="only these cantons")
     ap.add_argument("--zh")
     ap.add_argument("--be")
     ap.add_argument("--ge")
@@ -499,54 +644,36 @@ def main(argv=None):
     ap.add_argument("--fr")
     ap.add_argument("--fr-ref", help="PDF of the FR reformed parish tax rates")
     ap.add_argument("--fr-kath", help="PDF of the FR Catholic parish tax rates")
-    ap.add_argument("--ausnahmen", help="JSON file with exceptions per municipality")
-    ap.add_argument("--kantone", help="JSON file describing the sources of further cantons")
-    ap.add_argument("--ordner", help="folder with the source files named in --kantone")
-    ap.add_argument("--nur", action="append", help="only these cantons of --kantone")
     ap.add_argument("--zh-canton", type=float, default=0.95)
     ap.add_argument("--ge-canton", type=float, default=1.475)
     ap.add_argument("--vd-canton", type=float, default=1.55)
     ap.add_argument("--fr-canton", type=float, default=0.96)
     a = ap.parse_args(argv)
-    with open(a.reference, encoding="utf-8") as f:
-        data = json.load(f)
-    reference, year = data["municipalities"], data.get("year", 2026)
-    failed = False
-    sources = []
-    if a.zh:
-        sources.append(("ZH", read_zh(a.zh, a.zh_canton), []))
-    if a.be:
-        rows, _, sections = read_be(pdf_lines(a.be), year)
-        rows = {BE_TYPOS.get(k, k): v for k, v in rows.items()}
-        matched, unmatched = match_names(rows, [m for m in reference if m[2] == "BE"])
-        for bfs, (name, values, notes) in matched.items():
-            if name in sections:
-                notes.append("church rates of the main part taken; other rates in " + ", ".join(sections[name]))
-        sources.append(("BE", matched, unmatched))
-    for canton, path, reader, value in (("GE", a.ge, read_ge, a.ge_canton), ("VD", a.vd, read_vd, a.vd_canton)):
+    reference, year = read_reference(a.reference)
+    register = read_register(a.gemeinden) if a.gemeinden else [m[:3] for m in reference]
+    specs = read_specs(a.kantone) if a.kantone else {}
+    # single files given on the command line (instead of a description file)
+    for canton, path, value in (("ZH", a.zh, a.zh_canton), ("BE", a.be, None), ("GE", a.ge, a.ge_canton),
+                                ("VD", a.vd, a.vd_canton), ("FR", a.fr, a.fr_canton)):
         if path:
-            matched, unmatched = match_names(reader(path, value), [m for m in reference if m[2] == canton])
-            sources.append((canton, matched, unmatched))
-    if a.fr:
-        fr = read_fr(a.fr, a.fr_canton, year)[0]
-        ref_fr = [m for m in reference if m[2] == "FR"]
-        for path, i in ((a.fr_ref, 2), (a.fr_kath, 3)):
-            if path:
-                matched, _ = match_names(read_fr_parishes(path), ref_fr)
-                for bfs, (_, share, _) in matched.items():
-                    if bfs in fr:
-                        fr[bfs][1][i] = share
-        sources.append(("FR", fr, []))
-    if a.kantone:
-        sources += read_cantons(a.kantone, a.ordner or ".", reference, a.nur)
-    if a.ausnahmen:
-        exceptions = read_exceptions(a.ausnahmen)
-        for canton, source, *_ in sources:
-            apply_exceptions(canton, source, exceptions, reference)
-    for canton, source, unmatched, *notes in sources:
-        lines, n = compare(canton, source, reference)
+            spec = {"reader": canton.lower(), "file": os.path.abspath(path), "canton": value}
+            if canton == "FR":
+                spec["also"] = [{"reader": "fr_parishes", "file": os.path.abspath(f), "group": g}
+                                for f, g in ((a.fr_ref, "reformed"), (a.fr_kath, "catholic")) if f]
+            specs[canton] = spec
+    exceptions = read_exceptions(a.ausnahmen) if a.ausnahmen else {}
+    failed = False
+    for canton, income, wealth, unmatched, notes in collect(specs, a.ordner, register, year, exceptions, a.nur):
+        known = specs[canton].get("reference_differs", {})
+        if known:
+            notes = notes + [f"not compared with the reference: {', '.join(known['shares'])} ({known['reason']})"]
+        known = tuple(known.get("shares", ()))
+        lines, n = compare(canton, income, reference, known=known)
+        wealth_rows = {bfs: (income[bfs][0], values, []) for bfs, values in wealth.items() if bfs in income}
+        w_lines, _ = compare(canton, wealth_rows, reference, column=4, label="wealth ", known=known)
+        lines += [x for x in w_lines if "wealth " in x]
         lines += [f"{canton} {name}: name not found in the reference" for name in unmatched]
-        lines += [f"{canton}: note: {note}" for note in (notes[0] if notes else [])]
+        lines += [f"{canton}: note: {note}" for note in notes]
         print("\n".join(lines))
         differing = sum(1 for line in lines if ": note:" not in line)
         print(f"{canton}: {n['equal']} of {n['reference']} municipalities equal, {differing} differences or gaps")

@@ -1,12 +1,66 @@
 {
-  "_comment": "#285: values of single municipalities that the cantonal source does not have yet, each with its source. Shares as in kantone.json (0.92 = 92 %).",
+  "_comment": "#285: values of single municipalities decided after the cantonal source was published, each with an official source (decision of the municipality or the canton). Shares as in kantone.json (0.92 = 92 %). «beleg»: the file in steuerfuesse_quellen.json that proves the value.",
   "SO": {
-    "2473": {"municipal": 0.92, "source": "Dornach: Regierungsrat SO setzt das Budget 2026 fest, Steuerfuss rückwirkend 92 % (Medienmitteilung so.ch, 30.6.2026)"}
+    "2473": {
+      "municipal": 0.92,
+      "source": "Dornach: Regierungsrat SO setzt das Budget 2026 fest, Steuerfuss rückwirkend 92 % (Medienmitteilung so.ch, 30.6.2026)",
+      "beleg": "SO_Dornach_RRB.html"
+    },
+    "2428": {
+      "catholic": 0.18,
+      "reformed": 0.18,
+      "christ": 0.18,
+      "source": "Mümliswil-Ramiswil: Statistische Mitteilung SO 2026, Tabelle 4.4: reformiert und christkatholisch 18 %, römisch-katholisch je Ortsteil (Mümliswil 18 %, Ramiswil 22 %), der erste genommen (#313)",
+      "beleg": "SO.pdf"
+    }
   },
   "FR": {
-    "2025": {"municipal": 0.85, "source": "Lully: Budget 2026 mit fünf Steuerpunkten mehr angenommen, 85 % (La Liberté, Budget déficitaire approuvé à Lully)"},
-    "2087": {"municipal": 0.93, "source": "Mézières (FR): Antrag an die Gemeindeversammlung vom 10.12.2025, Koeffizient 85 % → 93 % (mezieres-fr.ch)"},
-    "2271": {"municipal": 0.58, "source": "Meyriez: Antrag an die Gemeindeversammlung, Steuerfuss 52.3 % → 58 % für 2026 (Informationsblatt, merlach.ch)"},
-    "2296": {"municipal": 0.81, "source": "Heitenried: Steuerfuss 2026 81 % (heitenried.ch/steuerfuss)"}
+    "2087": {
+      "municipal": 0.93,
+      "source": "Mézières (FR): Gemeindeversammlung vom 10.12.2025, Koeffizient 85 % → 93 % angenommen (Protokoll, mezieres-fr.ch)",
+      "beleg": "FR_Mezieres_GV.pdf"
+    },
+    "2296": {
+      "municipal": 0.81,
+      "source": "Heitenried: Steuerfuss 2026 Einkommen und Vermögen 81 % (Seite der Gemeinde, heitenried.ch/steuerfuss)",
+      "beleg": "FR_Heitenried.html"
+    },
+    "2056": {
+      "municipal": 0.86,
+      "source": "Fétigny-Ménières: Fusion per 1.1.2026 aus Fétigny (2025: 86 %) und Ménières (2025: 88.1 %); Koeffizient 2026 nicht veröffentlicht, Vorjahr der grösseren Gemeinde Fétigny (offene Daten FR 18_03_coefficients)",
+      "beleg": "FR.csv"
+    }
+  },
+  "VS": {
+    "6141": {
+      "catholic": 0.025,
+      "source": "Saxon: impôt de culte 2.5 % du montant d'impôts (tarifs communaux, saxon.ch; règlement: 2 à 5 % fixé chaque année par le conseil)",
+      "beleg": "VS_Saxon_tarifs.pdf"
+    }
+  },
+  "AR": {
+    "3005": {
+      "catholic": 0.46,
+      "source": "Stein (AR): römisch-katholische Kirchgemeinde Teufen 0.46 (Steuerfüsse 2026 AR, Zeile vor der Gemeinde; mehrere Kirchgemeinden, #313)",
+      "beleg": "AR.pdf"
+    },
+    "3033": {
+      "catholic": 0.74,
+      "source": "Lutzenberg: Kirchgemeinde Thal-Lutzenberg 0.74 (Steuerfüsse 2026 AR, Zeile vor der Gemeinde; mehrere Kirchgemeinden, #313)",
+      "beleg": "AR.pdf"
+    },
+    "3038": {
+      "catholic": 0.45,
+      "source": "Wolfhalden: römisch-katholische Kirchgemeinde Heiden 0.45 (Steuerfüsse 2026 AR, Zeile vor der Gemeinde; mehrere Kirchgemeinden, #313)",
+      "beleg": "AR.pdf"
+    }
+  },
+  "OW": {
+    "1402": {
+      "reformed": 0.0,
+      "catholic": 0.0,
+      "source": "Engelberg: in der Tabelle der Steuerfüsse 2026 (ow.ch) ohne Kirchensteuer",
+      "beleg": "OW.html"
+    }
   }
 }

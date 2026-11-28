@@ -140,8 +140,10 @@ Der Editor führt durch zwölf Abschnitte:
 - **Entnahmestrategie:** sechs Strategien (siehe unten).
 - **Optimierung:** sucht die beste Strategie für das eigene Szenario (siehe unten).
 - **Steuern:** Modus «Wohnort» (#63): Einkommens- und Vermögenssteuer aus Kanton, Gemeinde (alle Gemeinden des
-  Steuerjahres, Auswahl mit Suche) und Kirchensteuer (Konfession) nach den Steuergesetzen von Bund und Kantonen (#286, Wallis mit indexierten Tarifen von Kanton und Gemeinden #296 und der Ermässigung für Verheiratete #297; Steuerfüsse noch aus
-  den ESTV-Grunddaten, #285), mit den
+  Steuerjahres, Auswahl mit Suche) und Kirchensteuer (Konfession) nach den Steuergesetzen von Bund und Kantonen (#286, Wallis mit indexierten Tarifen von Kanton und Gemeinden #296 und der Ermässigung für Verheiratete #297; Steuerfüsse aus den
+  Veröffentlichungen der Kantone, Gemeinden nach dem Amtlichen Gemeindeverzeichnis des BFS, #285; ohne Kirchensteuer in
+  GE und NE, wo die Kirchenabgabe freiwillig ist, und vorerst in BL (#314), für die römisch- und christkatholische
+  Kirche BS und die Walliser Gemeinden mit Kultussteuer; Kantonssteuer GE mit der Ermässigung von 12 %), mit den
   Standardabzügen von Kanton und Bund (Sozialabzüge, Versicherungsprämien und Sparzinsen, mit Erwerb in der Variante
   «mit 2. und 3. Säule», Berufskostenpauschale, bei Ehepaaren mit zwei Erwerbseinkommen der Zweitverdienerabzug;
   statt dessen je Zeitraum ein eigener Wert, dazu die Säule 3a, #131) und

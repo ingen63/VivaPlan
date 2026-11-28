@@ -1057,10 +1057,12 @@ fn issue_297_ak2_valais_reduction_for_married_couples_only() {
     let full = tax::tax_indexed(&married.cantonal, 60_000.0, 1.0, 1.0);
     let after = married.income_tax_on(60_000.0, 0.0, 1.0);
     assert!((full - after - 1256.80 - 1308.90).abs() <= 1.0, "{full} - {after}");
-    // church tax (Sion, Roman Catholic 3 %) is not reduced: the difference to no denomination stays the full church tax
-    let catholic = data.resolve(&loc("VS", 6266, Church::Catholic), true).unwrap();
-    let church = catholic.income_tax_on(60_000.0, 0.0, 1.0) - after;
-    assert!((church - 0.03 * 3590.80).abs() <= 1.0, "church {church}");
+    // church tax (Saxon, Roman Catholic 2.5 %, #285) is not reduced: the difference to no denomination stays the full
+    // church tax on the cantonal simple tax (the same curve in the whole canton)
+    let saxon = data.resolve(&loc("VS", 6141, Church::None), true).unwrap();
+    let catholic = data.resolve(&loc("VS", 6141, Church::Catholic), true).unwrap();
+    let church = catholic.income_tax_on(60_000.0, 0.0, 1.0) - saxon.income_tax_on(60_000.0, 0.0, 1.0);
+    assert!((church - 0.025 * 3590.80).abs() <= 1.0, "church {church}");
     // other cantons: no reduction
     assert!(data
         .resolve(&loc("ZH", 261, Church::None), true)

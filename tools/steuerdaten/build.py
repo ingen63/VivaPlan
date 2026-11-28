@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """#63: Builds the tax data file for the mode «Wohnort». Since #286 tariffs and deductions come from the source files
-after the laws (`quellen/<year>/`); only the tax multipliers still come from the ESTV base data (#285).
+after the laws (`quellen/<year>/`); since #285 the tax multipliers come from the publications of the cantons.
 
 Inputs:
-  --steuerfuesse  ESTV tax calculator, «Grunddaten abrufen»: Excel export «Steuerfüsse», whole of Switzerland (xlsx)
-  --tarife        ESTV tariffs for income and wealth (CSV, columns see README.md); since #296 no row is used
-  --abzuege       ESTV deductions (CSV); since #296 no row is used
+  --steuerfuesse-ordner  folder with the publications of the cantons and the BFS register of the municipalities
+                  (`gemeinden.csv`), described in `quellen/<year>/kantone.json` and `ausnahmen.json` (#285)
+  --jahr          tax year (default: the year of the newest folder under `quellen/`)  «check-english: allow» (option name)
+  --steuerfuesse  instead of the folder: ESTV export «Steuerfüsse» (xlsx), only for a local comparison (#283)
+  --tarife, --abzuege  ESTV tables (CSV), no longer used (#296); optional
   --kapitalregeln rules of the cantons for lump sums from pension savings (JSON, default kapitalregeln.json, #64)
 Output: JSON with the income tariffs (on the taxable income), the standard deduction rules, the wealth curves (social
 deductions included), the curves for lump sums (#64) per canton and for the federal tax, and the tax multipliers per
@@ -106,8 +108,8 @@ WEALTH_DEDUCTIONS = {
 # Flat deduction for other professional expenses on the earned income
 EARNED_DEDUCTION = "HauptErw_EK"
 # Second-earner deduction for married couples with two earned incomes. Reference: the lower earned income after the
-# flat deduction for professional expenses; Bern: the total earned income (2 % of it). Derived from the ESTV tax
-# calculator 2026 (ZH, BE, LU, AG, SG, AR, GL, NE and federal, 23.11.2026).
+# flat deduction for professional expenses; Bern: the total earned income (2 % of it, StG BE Art. 38 Abs. 2). The
+# amounts and the source of each canton stand in its source file (`quellen/<year>/<KT>_abzuege.csv`).
 SECOND_EARNER_DEDUCTION = "ZweitVerdiener_EK"
 SECOND_EARNER_TOTAL = {"BE"}
 # #297: reduction of the income tax for married couples (Valais: 35 %, at least and at most an indexed amount), as a
@@ -116,8 +118,10 @@ SECOND_EARNER_TOTAL = {"BE"}
 TAX_REBATE = "Ermaessigung_EK"
 
 GAIN_SOURCE = "Steuergesetze der Kantone (Stand 2025/2026), Artikel je Kanton im Bericht (#287–#291, #296)"
-SOURCE = ("Steuergesetze und Verordnungen von Bund und Kantonen (#292, #296); Steuerfüsse: ESTV, Steuerrechner, "
-          "Grunddaten")
+SOURCE = ("Steuergesetze und Verordnungen von Bund und Kantonen (#292, #296); Steuerfüsse: Veröffentlichungen der "
+          "Kantone, Gemeinden: Amtliches Gemeindeverzeichnis des BFS (#285)")
+SOURCE_ESTV = ("Steuergesetze und Verordnungen von Bund und Kantonen (#292, #296); Steuerfüsse: ESTV, Steuerrechner, "
+               "Grunddaten (nur zum Vergleich, nicht zur Weitergabe, #283)")
 NOTE = ("Schätzung für die Planung mit den Standardabzügen des Kantons und des Bundes für Alleinstehende oder "
         "Verheiratete ohne Kinder, ohne individuelle Abzüge.")
 
@@ -602,7 +606,8 @@ def read_rules(path):
         return {k: v for k, v in json.load(f).items() if not k.startswith("_")}
 
 
-def build(tariff_rows, deduction_rows, year, munis, capital_rules=None, gain_rules=None, municipal_index=None):
+def build(tariff_rows, deduction_rows, year, munis, capital_rules=None, gain_rules=None, municipal_index=None,
+          source=SOURCE):
     tariffs = load_tariffs(tariff_rows)
     deds = defaultdict(dict)
     for r in deduction_rows:
@@ -675,7 +680,7 @@ def build(tariff_rows, deduction_rows, year, munis, capital_rules=None, gain_rul
                            for status, married in (("single", False), ("married", True))}
     data = {
         "year": year,
-        "source": SOURCE,
+        "source": source,
         "note": NOTE,
         "federal": federal,
         "federalDeductions": federal_deductions,
@@ -689,27 +694,62 @@ def build(tariff_rows, deduction_rows, year, munis, capital_rules=None, gain_rul
     return data, report
 
 
+def multipliers_from_sources(folder, year, quellen):
+    """#285: (year, municipalities, report) from the publications of the cantons in `folder` (see steuerfuesse.py)."""
+    import steuerfuesse  # noqa: E402 (next to this file)
+
+    register = steuerfuesse.read_register(os.path.join(folder, "gemeinden.csv"))
+    specs = steuerfuesse.read_specs(os.path.join(quellen, "kantone.json"))
+    exceptions_path = os.path.join(quellen, "ausnahmen.json")
+    exceptions = steuerfuesse.read_exceptions(exceptions_path) if os.path.exists(exceptions_path) else {}
+    missing = sorted(c for c, s in specs.items() if not os.path.exists(os.path.join(folder, s["file"])))
+    if missing:
+        raise ValueError(f"source files missing in {folder} for {', '.join(missing)}")
+    munis, report = steuerfuesse.multipliers(steuerfuesse.collect(specs, folder, register, year, exceptions), register)
+    if len(munis) != len(register):
+        raise ValueError("municipalities without tax multipliers: " + "; ".join(report))
+    return year, munis, ["multipliers: " + line for line in report]
+
+
+def newest_year():
+    years = [int(d) for d in os.listdir(SOURCES) if d.isdigit()]
+    return max(years)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--steuerfuesse", required=True)
-    ap.add_argument("--tarife", required=True)
-    ap.add_argument("--abzuege", required=True)
+    ap.add_argument("--steuerfuesse-ordner", help="publications of the cantons and gemeinden.csv (#285)")
+    ap.add_argument("--jahr", type=int, help="tax year (default: newest folder under quellen/)")
+    ap.add_argument("--steuerfuesse", help="ESTV export (xlsx), only for a local comparison (#283)")
+    ap.add_argument("--tarife", help="ESTV tariffs (CSV), no longer used")
+    ap.add_argument("--abzuege", help="ESTV deductions (CSV), no longer used")
     ap.add_argument("--kapitalregeln", default=RULES, help="rules of the cantons for lump sums (#64)")
     ap.add_argument("--quellen", help="directory of the source files from the laws (#287, default quellen/<year>)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--bericht", help="file for the report of the chosen tariffs and deductions")
     a = ap.parse_args(argv)
-    year, munis = read_multipliers(a.steuerfuesse)
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    if bool(a.steuerfuesse_ordner) == bool(a.steuerfuesse):
+        ap.error("exactly one of --steuerfuesse-ordner and --steuerfuesse is needed")
+    year = a.jahr or newest_year()
+    quellen = a.quellen or os.path.join(SOURCES, str(year))
+    if a.steuerfuesse_ordner:
+        year, munis, muni_report = multipliers_from_sources(a.steuerfuesse_ordner, year, quellen)
+        source = SOURCE
+    else:
+        year, munis = read_multipliers(a.steuerfuesse)
+        muni_report, source = ["multipliers: ESTV export, only for a local comparison (#283)"], SOURCE_ESTV
     import grundstueckgewinn  # noqa: E402 (next to this file, also with python3 -I)
 
-    src_tariffs, src_deductions, covered = read_sources(a.quellen or os.path.join(SOURCES, str(year)))
+    src_tariffs, src_deductions, covered = read_sources(quellen)
     check_coverage(covered, ESTV_ONLY)
-    data, report = build(merge_sources(read_csv(a.tarife), src_tariffs, covered, ESTV_ONLY),
-                         merge_sources(read_csv(a.abzuege), src_deductions, covered, ESTV_ONLY), year, munis,
+    estv_tariffs = read_csv(a.tarife) if a.tarife else []
+    estv_deductions = read_csv(a.abzuege) if a.abzuege else []
+    data, report = build(merge_sources(estv_tariffs, src_tariffs, covered, ESTV_ONLY),
+                         merge_sources(estv_deductions, src_deductions, covered, ESTV_ONLY), year, munis,
                          read_rules(a.kapitalregeln), grundstueckgewinn.rules(),
-                         read_municipal_index(a.quellen or os.path.join(SOURCES, str(year))))
-    report = origin_report(covered) + report
+                         read_municipal_index(quellen), source)
+    report = origin_report(covered) + muni_report + report
     with open(a.out, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
         f.write("\n")

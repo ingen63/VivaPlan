@@ -1,10 +1,9 @@
 """#65: Rule sets of the property gain tax for all 26 cantons.
 
-Source: ESTV, «Steuermäppchen» on the property gain tax («Grundstückgewinnsteuer»), tax period 2025
-(as of 26.11.2025), table 3 «Berechnung der Grundstückgewinnsteuer». The page is given with each canton; ZG, FR, VS,
-BS, BL, SG and VD were also checked against the cantonal law (as of November 2026); ZH (#287) and LU, UR,
-SZ, OW, NW (#288), BE, SO, BS, BL, AG (#289), GL, SH, AR, AI, SG, GR, TG (#290), FR, VD, NE, GE,
-JU, TI (#291) name the law article.
+Source: the tax laws of the cantons; every rule names its law article (ZH #287; LU, UR, SZ, OW, NW, ZG #288; BE, SO,
+BS, BL, AG #289; GL, SH, AR, AI, SG, GR, TG #290; FR, VD, NE, GE, JU, TI #291; VS #296). The rules were first taken
+from the ESTV «Steuermäppchen» on the property gain tax (tax period 2025) and then checked canton by canton against
+the law (#65, #287–#291); no number comes from the ESTV any more.
 
 Each rule is an object in the format of `PropertyGainTax` of the engine (camelCase):
 - model «zurich»: `brackets` [width, rate], optionally `uniformAbove` [from gain, rate for the whole gain];

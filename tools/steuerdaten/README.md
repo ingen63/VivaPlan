@@ -1,10 +1,11 @@
 # Steuerdatei für den Modus «Wohnort» (#63)
 
 `build.py` erzeugt `crates/engine/data/steuern-<Jahr>.json`. Tarife, Abzüge und Regeln des Bundes und der Kantone
-kommen seit #286 aus den Gesetzen und Verordnungen (Quelldateien unter `quellen/<Jahr>/`, siehe unten). Aus den
-Grunddaten des [Steuerrechners der ESTV](https://swisstaxcalculator.estv.admin.ch/#/taxdata/tax-scales) kommen nur noch
-die Steuerfüsse (bis #285); seit #296 auch das Wallis aus den Gesetzen (`ESTV_ONLY` in `build.py` ist leer). Die App bettet die
-Datei ein, es gibt keinen Netzwerkzugriff. Nur Standardbibliothek von Python, keine weiteren Pakete.
+kommen seit #286 aus den Gesetzen und Verordnungen (Quelldateien unter `quellen/<Jahr>/`, siehe unten), die Steuerfüsse
+seit #285 aus den Veröffentlichungen der Kantone und die Gemeinden aus dem Amtlichen Gemeindeverzeichnis des BFS. Die
+Steuerdatei enthält keine Daten des ESTV-Steuerrechners mehr; dessen Export dient nur noch lokal als Gegenprüfung
+(`steuerfuesse.py`, #283). Die App bettet die Datei ein, es gibt keinen Netzwerkzugriff. Nur Standardbibliothek von
+Python, keine weiteren Pakete.
 
 ## Inhalt der Steuerdatei
 
@@ -67,8 +68,12 @@ ESTV-Steuerrechners 2026 «Kapitalauszahlung aus Vorsorge» abgeleitet (#64; all
 5 Millionen, alleinstehend und verheiratet, Alter 65, ohne Kinder, ohne Konfession: Kantons- und Gemeindesteuer
 geteilt durch den Steuerfuss ergibt die einfache Steuer) und danach Kanton für Kanton gegen das Gesetz geprüft
 (#287–#291); jede Regel nennt den Artikel in `source`. Graubünden (Art. 40a: Satz für einen Fünfzehntel des Bezugs)
-und Zug (§ 37 Abs. 2) sind mit dem kantonalen Steuerrechner geprüft. Bei Genf und Tessin enthalten die Regeln
-zusätzlich Faktoren aus den ESTV-Rechnungen; das steht in `source`.
+und Zug (§ 37 Abs. 2) sind mit dem kantonalen Steuerrechner geprüft. Genf rechnet nach LIPP Art. 45 Abs. 2 mit einem
+Fünftel des Tarifs für Kanton und Gemeinden, Tessin nach LT Art. 38 Abs. 2 mit dem Satz der entsprechenden Jahresleistung
+nach der Umwandlungstabelle im Anhang der Circolare DC TI n. 3/2006 (Alter 65, Tabelle der Männer); die früheren
+Faktoren aus ESTV-Rechnungen sind ersetzt (#285). Die Kantonssteuer GE auf dem Einkommen ist 130,8 % der Grundsteuer
+(47,5 Zuschlagsrappen, davon 12 % Ermässigung, dazu 1 Rappen für die Hilfe zu Hause; LCACant Art. 2, D 3 06 Art. 1),
+auf dem Vermögen 148,5 %; so rechnet auch die Kalkulation «calculette IPC 2026» der Steuerverwaltung GE.
 
 - `kind: table`: eigener Tarif des Kantons für Kapitalleistungen aus Vorsorge (Stufen vom Typ `ZUERICH` mit Sockelbeträgen gelten
   als Typ `BUND`, Bern); `kind: income`: Anteil `share` der Steuer nach dem Einkommenstarif ohne Abzüge, Satz für
@@ -157,21 +162,23 @@ Jede gemeldete Abweichung wird im Teil-Issue erklärt (Erfassungsfehler oder ech
    jährlich an die Teuerung an; massgebend ist dann die Veröffentlichung der Steuerverwaltung oder die
    Teuerungsverordnung (Beispiele: SO Steuerverordnung Nr. 20, GE RCEPF, JU Arrêté, GR Indexstufe nach Art. 4,
    AR Anhang 1, ZG und VD Tarifblätter). `kapitalregeln.json` und `grundstueckgewinn.py` ebenso prüfen.
-3. **Steuerfüsse** (bis #285): Im ESTV-Steuerrechner unter «Grunddaten abrufen» die Steuerfüsse (Gesamte Schweiz,
-   Excel) als `local/estv_income_rates.xlsx` ablegen. Die Optionen `--tarife` und `--abzuege` lesen weiterhin die
-   ESTV-CSV; deren Zeilen werden für keinen Kanton mehr übernommen (`ESTV_ONLY` leer). Wallis: Index des Kantons und
+3. **Steuerfüsse** (#285): Die Veröffentlichungen der Kantone und das Gemeindeverzeichnis des BFS (Momentaufnahme
+   per 1.1. des Jahres als CSV von agvchapp.bfs.admin.ch, als `gemeinden.csv`) in einen Ordner laden, z. B.
+   `local/steuerquellen/<Jahr>/steuerfuesse/`; Dateinamen, Kantonssteuerfüsse und Muster in
+   `quellen/<Jahr>/kantone.json` nachführen, später beschlossene Werte in `ausnahmen.json`. Mit `steuerfuesse.py` gegen
+   die Datei des Vorjahres und, wenn vorhanden, den ESTV-Export prüfen (nur lokal). Wallis: Index des Kantons und
    der Gemeinden für das neue Jahr nachführen (`VS_tarife.csv`, `VS_gemeindeindex.csv`), ebenso Mindest- und
    Höchstbetrag der Ermässigung für Verheiratete (`Ermaessigung_EK` in `VS_abzuege.csv`, «Adaptation des déductions
    forfaitaires»).
    Die undokumentierte Schnittstelle des Rechners nicht verwenden.
 4. **Erzeugen:**
    ```bash
-   python3 -I tools/steuerdaten/build.py --steuerfuesse local/estv_income_rates.xlsx \
-     --tarife local/estv/tarife_<Jahr>.csv --abzuege local/estv/abzuege_<Jahr>.csv \
-     --out crates/engine/data/steuern-<Jahr>.json --bericht local/estv/bericht.txt
+   python3 -I tools/steuerdaten/build.py --steuerfuesse-ordner local/steuerquellen/<Jahr>/steuerfuesse --jahr <Jahr> \
+     --out crates/engine/data/steuern-<Jahr>.json --bericht local/steuerquellen/<Jahr>/bericht.txt
    ```
-   Das Werkzeug bricht ab, wenn ein Kanton oder der Bund keine Quelldatei hat. Der Bericht nennt je
-   Kanton die Herkunft, die gewählten Tarife und Abzüge und die Regeln mit Gesetzesartikel.
+   Das Werkzeug bricht ab, wenn ein Kanton oder der Bund keine Quelldatei hat oder eine Gemeinde des Verzeichnisses
+   keine Steuerfüsse. Der Bericht nennt je Kanton die Herkunft, die gewählten Tarife und Abzüge, die Regeln mit
+   Gesetzesartikel und die Kirchensteuern ohne Quelle (mit 0 gerechnet).
 5. **Abgleichen:** `vergleich.py` gegen die Datei des Vorjahres; jede Abweichung über 1 % mit der Teuerung oder einer
    Gesetzesänderung erklären.
 6. Den Dateinamen in `crates/engine/src/taxdata.rs` (`BUILTIN`) anpassen.
@@ -180,10 +187,10 @@ Jede gemeldete Abweichung wird im Teil-Issue erklärt (Erfassungsfehler oder ech
    in `tax_location.rs` und `tax_capital_location.rs` bleiben als zweite Prüfung (#292); Toleranz ±5 %.
 8. Tests: `python3 -I -m unittest discover -s tools/steuerdaten` und `make test`.
 
-## Steuerfüsse aus den Quellen der Kantone (#285, Weg b3, Versuch)
+## Steuerfüsse aus den Quellen der Kantone (#285)
 
 `steuerfuesse.py` liest die Steuerfüsse aus den Veröffentlichungen der Kantone statt aus dem ESTV-Steuerrechner und
-vergleicht sie mit einer Steuerdatei. Als Versuch für alle 26 Kantone (Stand November 2026); die Steuerdatei baut weiter `build.py`.
+liefert sie `build.py` für die Steuerdatei; zur Gegenprüfung vergleicht es sie mit einer Steuerdatei oder dem ESTV-Export.
 
 - **ZH:** offene Daten des Statistischen Amts, `kanton_zuerich_stf_aktuell.csv` («Steuerfüsse der Zürcher Gemeinden»
   auf opendata.swiss, Nutzung mit Quellenangabe). Die Datei enthält den Gemeindesteuerfuss ohne Kirche und mit jeder
@@ -217,7 +224,11 @@ vergleicht sie mit einer Steuerdatei. Als Versuch für alle 26 Kantone (Stand No
   auf der Seite zu Zeilen zusammen; das braucht es, wo PDFKit spaltenweise liest (AR, GR, SH, SO, VS); ohne `--rows`
   für JU, NW, UR. Excel-Tabellen werden als CSV gespeichert.
 
-Die Dateien lädt der Mensch von Hand herunter; sie liegen nicht im Repository.
+Die Dateien lädt der Mensch von Hand herunter; sie liegen nicht im Repository. `quellen/<Jahr>/steuerfuesse_quellen.json`
+nennt je Datei Adresse, Abrufdatum, Herausgeber, Nutzungsbedingungen und SHA-256 (abgeleitete Dateien mit dem Befehl).
+**Nachweis der Herkunft:** `python3 -I tools/steuerdaten/nachweis.py --ordner <Ordner>` prüft die Hashes, dass keine
+Quelle von der ESTV stammt und jede Tarif- und Abzugszeile ihre Rechtsquelle nennt, baut die Steuerdatei neu und
+vergleicht sie byte-genau mit der Datei im Repository.
 
 ```bash
 python3 -I tools/steuerdaten/steuerfuesse.py crates/engine/data/steuern-2026.json --zh <csv> --be <pdf> \

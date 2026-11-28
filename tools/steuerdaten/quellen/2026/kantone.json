@@ -6,19 +6,329 @@
     "start": "christ-kt.",
     "row": "(?P<name>[A-ZÄÖÜ][^\\d\\n]*?)\\s+(?P<municipal>\\d+)\\s+(?P<reformed>\\d+)\\s+(?P<catholic>\\d+)\\s+(?P<christ>\\d+)(?=\\s|$)"
   },
-  "ZG": {
-    "file": "ZG.pdf",
-    "source": "Steuerverwaltung Zug, Steuerfüsse der Gemeinden 2023–2026 (PDF, zg.ch, 21.1.2026)",
-    "canton": 0.78,
-    "start": "% % % %",
-    "end": "Evangelisch-reformierte",
-    "row": "^(?P<name>[A-ZÄÖÜ][^\\d\\n]*?)\\s+[\\d.]+ [\\d.]+ [\\d.]+ (?P<municipal>[\\d.]+) [\\d.]+ [\\d.]+ [\\d.]+ (?P<catholic>[\\d.]+)",
+  "AI": {
+    "file": "AI.pdf",
+    "source": "Kantonale Steuerverwaltung AI, Steuerfüsse der verschiedenen Körperschaften, Stand 2026 (PDF, ai.ch)",
+    "canton": 0.96,
     "fixed": {
-      "reformed": 0.06,
+      "christ": 0.0
+    },
+    "rows": [
+      "(?s)Bezirke\\n(?P<name>Appenzell) (?P<municipal>\\d+) .*?\\nAppenzell kath\\. (?P<catholic>\\d+) .*?\\nAppenzell prot\\. (?P<reformed>\\d+) .*?Schulgemeinden\\nAppenzell (?P<municipal_add>\\d+)",
+      "(?s)\\n(?P<name>Schwende-Rüte) (?P<municipal>\\d+) .*?\\nSchwende kath\\. (?P<catholic>\\d+) .*?\\nAppenzell prot\\. (?P<reformed>\\d+) .*?Schulgemeinden.*?\\nSchwende (?P<municipal_add>\\d+)",
+      "(?s)\\n(?P<name>Schlatt-Haslen) (?P<municipal>\\d+) .*?\\nHaslen kath\\. (?P<catholic>\\d+) .*?\\nAppenzell prot\\. (?P<reformed>\\d+) .*?Schulgemeinden.*?\\nSchlatt-Haslen (?P<municipal_add>\\d+)",
+      "(?s)Bezirke\\n.*?\\n(?P<name>Gonten) (?P<municipal>\\d+) .*?\\nGonten kath\\. (?P<catholic>\\d+) .*?\\nAppenzell prot\\. (?P<reformed>\\d+) .*?Schulgemeinden.*?\\nGonten (?P<municipal_add>\\d+)",
+      "(?s)Bezirke\\n.*?\\n(?P<name>Oberegg) (?P<municipal>\\d+) .*?\\nOberegg kath\\. (?P<catholic>\\d+) .*?\\nReute prot\\. (?P<reformed>\\d+) "
+    ],
+    "notes": [
+      "municipal share: district + school (Oberegg: district only); Kirchgemeinde chosen by name, Protestants of the inner districts in Appenzell, of Oberegg in Reute"
+    ]
+  },
+  "AR": {
+    "file": "AR.pdf",
+    "source": "Steuerverwaltung Appenzell Ausserrhoden, Steuerfüsse 2026 natürliche Personen (PDF, ar.ch)",
+    "canton": 3.3,
+    "scale": 1.0,
+    "row": "^(?P<name>[A-ZÄÖÜ][^\\d\\n]*?) (?P<municipal>\\d\\.\\d+) [^\\d\\n]+ (?P<reformed>\\d\\.\\d+)(?: [^\\d\\n]+ (?P<catholic>\\d\\.\\d+))? ",
+    "fixed": {
       "christ": 0.0
     },
     "notes": [
-      "reformed: one Kirchgemeinde for the canton, 6 % in 2026"
+      "church shares of the Kirchgemeinde named in the row; where the Catholic Kirchgemeinde stands in another row, only the reformed share is compared"
+    ]
+  },
+  "BE": {
+    "reader": "be",
+    "file": "BE.pdf",
+    "source": "Finanzverwaltung Kanton Bern, Steueranlagen der Gemeinden und Steuersätze der Kirchgemeinden 2026 (PDF, fin.be.ch), Tabelle 2.1",
+    "canton": 2.975
+  },
+  "BL": {
+    "file": "BL.csv",
+    "source": "Statistisches Amt Basel-Landschaft, Steuerfüsse und Steuersätze nach Gemeinde und Jahr (offene Daten 10580, data.bl.ch)",
+    "canton": 1.0,
+    "csv": true,
+    "delimiter": ";",
+    "row": "^2026 \\d+ (?P<name>[^\\d\\n]+?) Steuerfuss_natürliche_Personen_Prozent (?P<municipal>[\\d.]+)$",
+    "notes": [
+      "church tax set per Kirchgemeinde, reformed and Christ Catholic in percent of the income: not yet in the tax data (#314), input by hand (#285, b1)"
+    ],
+    "fixed": {
+      "reformed": 0.0,
+      "catholic": 0.0,
+      "christ": 0.0
+    },
+    "reference_differs": {
+      "shares": [
+        "reformed",
+        "catholic",
+        "christ catholic"
+      ],
+      "reason": "church tax in percent of the income, not yet in the tax data (#314)"
+    }
+  },
+  "BS": {
+    "file": "BS.html",
+    "source": "Steuerverwaltung Basel-Stadt, Steuerrechner, Steuerfüsse (Stand 2026) (HTML, bs.ch)",
+    "canton": 0.5,
+    "start": "Steuerfüsse (Stand 2026)",
+    "row": "(?:Stadt|Gemeinde) (?P<name>Basel|Riehen|Bettingen)\\*? (?P<municipal>[\\d.]+)% [\\d.]+%",
+    "notes": [
+      "reformed: 8 % of the cantonal income tax (Steuerordnung ERK BS § 34, rate set yearly by the synod; erk-bs.ch); Roman and Christ Catholic: rate not yet confirmed; no church tax on wealth"
+    ],
+    "wealth": {
+      "also": [
+        {
+          "file": "BS.html",
+          "start": "Vermögenssteuer Kanton",
+          "row": "(?:Stadt|Gemeinde) (?P<name>Basel|Riehen|Bettingen)\\*? (?P<municipal>[\\d.]+)% [\\d.]+%"
+        }
+      ],
+      "fixed": {
+        "reformed": 0.0,
+        "catholic": 0.0,
+        "christ": 0.0
+      }
+    },
+    "fixed": {
+      "reformed": 0.08
+    }
+  },
+  "FR": {
+    "reader": "fr",
+    "file": "FR.csv",
+    "source": "Amt für Statistik FR, Coefficients et taux d'impôts par commune (offene Daten 18_03_coefficients); Kirchensteuer: Service cantonal des contributions FR, Coefficients d'impôt des paroisses 2026 (PDF, fr.ch)",
+    "canton": 0.96,
+    "also": [
+      {
+        "reader": "fr_parishes",
+        "file": "FR_ref.pdf",
+        "group": "reformed"
+      },
+      {
+        "reader": "fr_parishes",
+        "file": "FR_kath.pdf",
+        "group": "catholic"
+      }
+    ],
+    "wealth": {
+      "canton": 1.0,
+      "also": [
+        {
+          "reader": "fr_parishes",
+          "file": "FR_ref.pdf",
+          "group": "reformed",
+          "column": 3
+        },
+        {
+          "reader": "fr_parishes",
+          "file": "FR_kath.pdf",
+          "group": "catholic",
+          "column": 3
+        }
+      ]
+    },
+    "fixed": {
+      "christ": 0.0
+    }
+  },
+  "GE": {
+    "reader": "ge",
+    "file": "GE.htm",
+    "source": "Conseil d'État GE, ArCA-2026 (RSG D 3 05.30, silgeneve.ch); Kanton: LCACant (D 3 07) Art. 2 und Loi relative à la diminution de l'impôt sur le revenu des personnes physiques (D 3 06) Art. 1",
+    "canton": 1.308,
+    "fixed": {
+      "reformed": 0.0,
+      "catholic": 0.0,
+      "christ": 0.0
+    },
+    "notes": [
+      "canton, income: (100 + 47.5 centimes) less 12 % plus 1 centime for home care = 130.8 % of the base tax (LCACant Art. 2, D 3 06 Art. 1; as the calculette IPC 2026 of the AFC GE); wealth: 148.5 %",
+      "no church tax: the contribution religieuse volontaire is a donation (at most 1.5 % of the taxable income), input by hand (#285, b1)"
+    ],
+    "reference_differs": {
+      "shares": [
+        "canton",
+        "reformed",
+        "catholic",
+        "christ catholic"
+      ],
+      "reason": "cantonal reduction of 12 % and 1 centime for home care, which the ESTV export keeps apart; voluntary church contribution (#285)"
+    },
+    "wealth": {
+      "canton": 1.485
+    }
+  },
+  "GL": {
+    "file": "GL.pdf",
+    "source": "Kantonale Steuerverwaltung Glarus, Gemeinde- und Kirchensteuer 2026 (PDF, gl.ch)",
+    "canton": 0.597,
+    "row": "^(?P<name>[A-ZÄÖÜ][^\\d\\n]*?) (?P<municipal>\\d+) (?:(?P<municipal_add>\\d\\.\\d) )?(?P<reformed>[\\d.]+) \\d+ (?P<catholic>[\\d.]+) \\d+$",
+    "fixed": {
+      "christ": 0.0
+    },
+    "subrows": true,
+    "aliases": {
+      "Mühlehorn": "Glarus Nord",
+      "Mitlödi": "Glarus Süd"
+    },
+    "notes": [
+      "canton 58 % + Bausteuer 1.7 %; municipal tax + Bausteuer; church rates per former village: Glarus Nord and Glarus Süd compared with the first village listed"
+    ]
+  },
+  "GR": {
+    "file": "GR_rows.txt",
+    "source": "Steuerverwaltung Graubünden, Gemeinde- und Kirchensteuerfüsse 2026 (PDF, gr.ch), mit pdf2txt.swift --rows in Text umgewandelt",
+    "canton": 0.92,
+    "row": "^\\d{4} \\d{3} (?P<name>[A-ZÄÖÜ][^\\d\\n]*?) (?P<municipal>[\\d.]+) (?P<reformed>[\\d.]+) (?P<reformed_add>[\\d.]+) (?P<catholic>[\\d.]+)",
+    "fixed": {
+      "christ": 0.0
+    },
+    "notes": [
+      "reformed: church of the Kirchgemeinde plus the cantonal church (3.5 %); fractions of municipalities not compared"
+    ],
+    "aliases": {
+      "Safien/Tenna/Versam": "Safiental",
+      "Sta. Maria i.C.": "Santa Maria in Calanca"
+    }
+  },
+  "JU": {
+    "file": "JU.txt",
+    "source": "Service des contributions JU, Quotités d'impôt des communes et taux d'impôts 2026 (PDF, jura.ch), mit PDFKit in Text umgewandelt",
+    "canton": 2.85,
+    "scale": 0.01,
+    "scales": {
+      "municipal": 1.0
+    },
+    "base_name": true,
+    "row": "^\\d{3} (?P<name>[^\\d\\n]+?) (?P<municipal>\\d\\.\\d\\d) \\d\\.\\d\\d (?P<catholic>\\d+\\.\\d+) (?P<reformed>\\d+\\.\\d+) ",
+    "fixed": {
+      "christ": 0.0
+    },
+    "notes": [
+      "sections of a municipality (in parentheses): the first row taken"
+    ]
+  },
+  "LU": {
+    "file": "LU.html",
+    "source": "Dienststelle Steuern Luzern, Gemeindeübersicht 2026 (Steuereinheiten, steuern.lu.ch)",
+    "canton": 1.45,
+    "scale": 1.0,
+    "total": true,
+    "row": "(?P<name>[A-ZÄÖÜ][^\\d]*?) (?:definitiv|provisorisch) (?P<catholic>[\\d.]+) (?P<reformed>[\\d.]+) (?P<christ>[\\d.]+) (?P<municipal>[\\d.]+) [\\d.]+",
+    "notes": [
+      "total units (canton, municipality, church); shares are differences"
+    ],
+    "start": "Juristische Personen",
+    "parts": true
+  },
+  "NE": {
+    "file": "NE.html",
+    "source": "Service des contributions NE, Coefficients communaux 2024–2026 (HTML, ne.ch)",
+    "canton": 1.24,
+    "start": "Années 2024 à 2026",
+    "row": " \\d+ (?P<name>[A-ZÉÈ][^\\d]*?) (?P<municipal>\\d+) \\d+ (?:\\d+|-)",
+    "notes": [
+      "no church tax: the contribution ecclésiastique is voluntary, its amount chosen freely (Concordat entre l'État et les Églises), input by hand (#285, b1)"
+    ],
+    "subrows": true,
+    "fixed": {
+      "reformed": 0.0,
+      "catholic": 0.0,
+      "christ": 0.0
+    },
+    "reference_differs": {
+      "shares": [
+        "reformed",
+        "catholic",
+        "christ catholic"
+      ],
+      "reason": "voluntary contribution, no church tax (#285)"
+    }
+  },
+  "NW": {
+    "file": "NW.txt",
+    "source": "Kantonales Steueramt Nidwalden, Steuerfüsse 2026 natürliche Personen (PDF, steuern-nw.ch), mit PDFKit in Text umgewandelt",
+    "canton": 2.61,
+    "scale": 1.0,
+    "row": "^(?P<name>[A-ZÄÖÜ][^\\d\\n]*?) [\\d.]+ [\\d.]+ [\\d.]+ [\\d.]+ [\\d.]+ (?P<municipal>[\\d.]+) (?P<municipal_sub>[\\d.]+) (?P<catholic>[\\d.]+) (?P<catholic_sub>[\\d.]+) (?P<reformed>[\\d.]+) (?P<reformed_sub>[\\d.]+)$",
+    "fixed": {
+      "christ": 0.0
+    },
+    "subrows": true,
+    "notes": [
+      "units after the rebate (canton 2.66 − 0.05)"
+    ]
+  },
+  "OW": {
+    "file": "OW.html",
+    "source": "Kanton Obwalden, Steuerfüsse 2001–2026 (HTML-Tabelle, ow.ch/publikationen/8258)",
+    "canton": 3.25,
+    "scale": 1.0,
+    "start": "Steuerperiode 2026",
+    "end": "Steuerperiode 2025",
+    "row": "(?P<name>[A-ZÄÖÜ][a-zäöü]+) [\\d.]+(?: \\+ [\\d.]+ \\S)? (?P<municipal>[\\d.]+)(?: \\+ (?P<municipal_add>[\\d.]+) \\S)?(?: - (?P<municipal_sub>[\\d.]+) \\S)?(?: (?P<catholic>[\\d.]+) (?P<reformed>[\\d.]+))? [\\d.]+ [\\d.]+",
+    "fixed": {
+      "christ": 0.0
+    },
+    "notes": [
+      "canton 3.15 + 0.10 units; municipal surcharges and deductions included; Engelberg without church shares in the table"
+    ]
+  },
+  "SG": {
+    "file": "SG.pdf",
+    "source": "Steueramt St. Gallen, Steuerfüsse der Gemeinden 2026 (PDF, sg.ch)",
+    "canton": 1.05,
+    "start": "Promille in %",
+    "row": "^(?P<name>[A-ZÄÖÜ][^\\d\\n]*?) (?:[\\d.]+|--) (?P<municipal>\\d+) (?:(?P<catholic>\\d+) (?P<reformed>\\d+) \\d+ \\d+|-- -- -- --)",
+    "fixed": {
+      "christ": 0.24
+    },
+    "parts": true,
+    "aliases": {
+      "St. Gallen Centrum (C)": "St. Gallen",
+      "Vilters": "Vilters-Wangs",
+      "Alt St. Johann": "Wildhaus-Alt St. Johann",
+      "St. Peterzell": "Neckertal",
+      "Engelburg": "Gaiserwald"
+    },
+    "notes": [
+      "Christ Catholic 24 % for the whole canton; municipalities with several Kirchgemeinden: the first Kirchgemeinde listed (#313)"
+    ],
+    "subrows": true
+  },
+  "SH": {
+    "file": "SH_rows.txt",
+    "source": "Steuerverwaltung Schaffhausen, Steuerfüsse 2026 (PDF, sh.ch), mit pdf2txt.swift --rows in Text umgewandelt",
+    "canton": 0.76,
+    "row": "^(?P<name>[A-ZÄÖÜ][^\\d\\n]*?) (?P<municipal>\\d+) \\d+ (?:[A-Za-z]+)?(?P<reformed>[\\d.]+)(?:/[A-Za-z]+[\\d.]+ [a-e]\\))? (?P<catholic>[\\d.]+) (?P<christ>[\\d.]+)$",
+    "notes": [
+      "two reformed Kirchgemeinden (e.g. «SH13/H13»): the first one taken"
+    ]
+  },
+  "SO": {
+    "file": "SO_rows.txt",
+    "source": "Amt für Gemeinden SO, Statistische Mitteilung Steuern und Gebühren 2026 (PDF, so.ch), mit pdf2txt.swift --rows in Text umgewandelt",
+    "canton": 1.04,
+    "start": "Gemeinde 2025 2026 Ver-",
+    "end": "Tabelle: Steuerfüsse juristische Personen",
+    "row": "(?P<name>[A-ZÄÖÜ][^\\d\\n*+]*?(?:-\\n[^\\d\\n*+]*?)?) \\d+(?:\\.\\d)?\\*? (?P<municipal>\\d+(?:\\.\\d)?)\\**(?= |$)",
+    "subrows": true,
+    "notes": [
+      "municipal share from table 1 (left and right column); church tax from table 4.4 of the same report (the canton names the ESTV tax calculator as its source; taken by decision, #285); «**»: rate not yet decided, previous year"
+    ],
+    "skip": "Bezirk",
+    "also": [
+      {
+        "file": "SO_rows.txt",
+        "start": "gruppiert nach Einwohnergemeinden und Ortsteile",
+        "end": "Zuordnung der Einwohnergemeinden auf die Kirchgemeinden18",
+        "skip": "Bezirk|Ortsteil",
+        "rows": [
+          "^(?P<name>[A-ZÄÖÜ][^\\d\\n*]*?(?:-\\n[^\\d\\n*]*?)?)(?: \\d\\))?\\*? \\d+(?:\\.\\d+)? (?P<catholic>\\d+(?:\\.\\d+)?)(?: [+-])? \\d+(?:\\.\\d+)? (?P<reformed>\\d+(?:\\.\\d+)?)(?: [+-])? \\d+(?:\\.\\d+)? (?P<christ>\\d+(?:\\.\\d+)?)(?: [+-])?$",
+          "^(?P<name>[A-ZÄÖÜ][^\\d\\n*]*?(?:-\\n[^\\d\\n*]*?)?)(?: \\d\\))?\\*? \\d+(?:\\.\\d+)? (?P<catholic>\\d+(?:\\.\\d+)?)(?: [+-])? \\d+(?:\\.\\d+)? (?P<reformed>\\d+(?:\\.\\d+)?)(?: [+-])?$"
+        ]
+      }
     ]
   },
   "SZ": {
@@ -52,153 +362,6 @@
       "total tax rates (canton, municipality, school, church); shares are differences"
     ]
   },
-  "VS": {
-    "file": "VS_rows.txt",
-    "source": "Service cantonal des contributions VS, Coefficients et indexations des communes 2022–2027 (PDF, vs.ch), mit pdf2txt.swift --rows in Text umgewandelt",
-    "canton": 1.0,
-    "scale": 1.0,
-    "notes": [
-      "church tax not in the source (some municipalities have one)"
-    ],
-    "rows": [
-      "^\\d+ (?P<name>[^\\d\\n(]+?)(?: \\([^)]*\\))? (?:[\\d.]+ \\d+% ){4}(?P<municipal>[\\d.]+) \\d+%",
-      "(?P<name>Goms) \\([^)]*\\n\\d+ [^)]*\\) (?:[\\d.]+ \\d+% ){4}(?P<municipal>[\\d.]+) \\d+%"
-    ]
-  },
-  "LU": {
-    "file": "LU.html",
-    "source": "Dienststelle Steuern Luzern, Gemeindeübersicht 2026 (Steuereinheiten, steuern.lu.ch)",
-    "canton": 1.45,
-    "scale": 1.0,
-    "total": true,
-    "row": "(?P<name>[A-ZÄÖÜ][^\\d]*?) (?:definitiv|provisorisch) (?P<catholic>[\\d.]+) (?P<reformed>[\\d.]+) (?P<christ>[\\d.]+) (?P<municipal>[\\d.]+) [\\d.]+",
-    "notes": [
-      "total units (canton, municipality, church); shares are differences"
-    ],
-    "start": "Juristische Personen",
-    "parts": true
-  },
-  "SG": {
-    "file": "SG.pdf",
-    "source": "Steueramt St. Gallen, Steuerfüsse der Gemeinden 2026 (PDF, sg.ch)",
-    "canton": 1.05,
-    "start": "Promille in %",
-    "row": "^(?P<name>[A-ZÄÖÜ][^\\d\\n]*?) (?:[\\d.]+|--) (?P<municipal>\\d+) (?:(?P<catholic>\\d+) (?P<reformed>\\d+) \\d+ \\d+|-- -- -- --)",
-    "fixed": {
-      "christ": 0.24
-    },
-    "parts": true,
-    "aliases": {
-      "St. Gallen Centrum (C)": "St. Gallen"
-    },
-    "notes": [
-      "Christ Catholic 24 % for the whole canton; where the church rates stand only in the rows of the Kirchgemeinden (Gaiserwald, Neckertal), only the municipal share is compared"
-    ],
-    "subrows": true
-  },
-  "GR": {
-    "file": "GR_rows.txt",
-    "source": "Steuerverwaltung Graubünden, Gemeinde- und Kirchensteuerfüsse 2026 (PDF, gr.ch), mit pdf2txt.swift --rows in Text umgewandelt",
-    "canton": 0.92,
-    "row": "^\\d{4} \\d{3} (?P<name>[A-ZÄÖÜ][^\\d\\n]*?) (?P<municipal>[\\d.]+) (?P<reformed>[\\d.]+) (?P<reformed_add>[\\d.]+) (?P<catholic>[\\d.]+)",
-    "fixed": {
-      "christ": 0.0
-    },
-    "notes": [
-      "reformed: church of the Kirchgemeinde plus the cantonal church (3.5 %); fractions of municipalities not compared"
-    ],
-    "aliases": {
-      "Safien/Tenna/Versam": "Safiental",
-      "Sta. Maria i.C.": "Santa Maria in Calanca"
-    }
-  },
-  "AR": {
-    "file": "AR.pdf",
-    "source": "Steuerverwaltung Appenzell Ausserrhoden, Steuerfüsse 2026 natürliche Personen (PDF, ar.ch)",
-    "canton": 3.3,
-    "scale": 1.0,
-    "row": "^(?P<name>[A-ZÄÖÜ][^\\d\\n]*?) (?P<municipal>\\d\\.\\d+) [^\\d\\n]+ (?P<reformed>\\d\\.\\d+)(?: [^\\d\\n]+ (?P<catholic>\\d\\.\\d+))? ",
-    "fixed": {
-      "christ": 0.0
-    },
-    "notes": [
-      "church shares of the Kirchgemeinde named in the row; where the Catholic Kirchgemeinde stands in another row, only the reformed share is compared"
-    ]
-  },
-  "NW": {
-    "file": "NW.txt",
-    "source": "Kantonales Steueramt Nidwalden, Steuerfüsse 2026 natürliche Personen (PDF, steuern-nw.ch), mit PDFKit in Text umgewandelt",
-    "canton": 2.61,
-    "scale": 1.0,
-    "row": "^(?P<name>[A-ZÄÖÜ][^\\d\\n]*?) [\\d.]+ [\\d.]+ [\\d.]+ [\\d.]+ [\\d.]+ (?P<municipal>[\\d.]+) (?P<municipal_sub>[\\d.]+) (?P<catholic>[\\d.]+) (?P<catholic_sub>[\\d.]+) (?P<reformed>[\\d.]+) (?P<reformed_sub>[\\d.]+)$",
-    "fixed": {
-      "christ": 0.0
-    },
-    "subrows": true,
-    "notes": [
-      "units after the rebate (canton 2.66 − 0.05)"
-    ]
-  },
-  "OW": {
-    "file": "OW.html",
-    "source": "Kanton Obwalden, Steuerfüsse 2001–2026 (HTML-Tabelle, ow.ch/publikationen/8258)",
-    "canton": 3.25,
-    "scale": 1.0,
-    "start": "Steuerperiode 2026",
-    "end": "Steuerperiode 2025",
-    "row": "(?P<name>[A-ZÄÖÜ][a-zäöü]+) [\\d.]+(?: \\+ [\\d.]+ \\S)? (?P<municipal>[\\d.]+)(?: \\+ (?P<municipal_add>[\\d.]+) \\S)?(?: - (?P<municipal_sub>[\\d.]+) \\S)?(?: (?P<catholic>[\\d.]+) (?P<reformed>[\\d.]+))? [\\d.]+ [\\d.]+",
-    "fixed": {
-      "christ": 0.0
-    },
-    "notes": [
-      "canton 3.15 + 0.10 units; municipal surcharges and deductions included; Engelberg without church shares in the table"
-    ]
-  },
-  "UR": {
-    "file": "UR_gem.txt",
-    "source": "Kanton Uri, Steuerfüsse der Einwohnergemeinden ab 2009 (PDF, ur.ch), mit PDFKit in Text umgewandelt; Spalte 2026",
-    "canton": 1.0,
-    "blocks": true,
-    "group": "municipal",
-    "start": "2025 2026",
-    "notes": [
-      "municipal share only; church shares in a separate list by Kirchgemeinde (not compared)"
-    ]
-  },
-  "JU": {
-    "file": "JU.txt",
-    "source": "Service des contributions JU, Quotités d'impôt des communes et taux d'impôts 2026 (PDF, jura.ch), mit PDFKit in Text umgewandelt",
-    "canton": 2.85,
-    "scale": 0.01,
-    "scales": {
-      "municipal": 1.0
-    },
-    "base_name": true,
-    "row": "^\\d{3} (?P<name>[^\\d\\n]+?) (?P<municipal>\\d\\.\\d\\d) \\d\\.\\d\\d (?P<catholic>\\d+\\.\\d+) (?P<reformed>\\d+\\.\\d+) ",
-    "fixed": {
-      "christ": 0.0
-    },
-    "notes": [
-      "sections of a municipality (in parentheses): the first row taken"
-    ]
-  },
-  "GL": {
-    "file": "GL.pdf",
-    "source": "Kantonale Steuerverwaltung Glarus, Gemeinde- und Kirchensteuer 2026 (PDF, gl.ch)",
-    "canton": 0.597,
-    "row": "^(?P<name>[A-ZÄÖÜ][^\\d\\n]*?) (?P<municipal>\\d+) (?:(?P<municipal_add>\\d\\.\\d) )?(?P<reformed>[\\d.]+) \\d+ (?P<catholic>[\\d.]+) \\d+$",
-    "fixed": {
-      "christ": 0.0
-    },
-    "subrows": true,
-    "aliases": {
-      "Mühlehorn": "Glarus Nord",
-      "Mitlödi": "Glarus Süd"
-    },
-    "notes": [
-      "canton 58 % + Bausteuer 1.7 %; municipal tax + Bausteuer; church rates per former village: Glarus Nord and Glarus Süd compared with the first village listed"
-    ]
-  },
   "TI": {
     "file": "TI.html",
     "source": "Divisione delle contribuzioni TI, Moltiplicatori d'imposta comunali 2021–2026 (HTML, ti.ch)",
@@ -213,76 +376,81 @@
       "no church tax in this form"
     ]
   },
-  "NE": {
-    "file": "NE.html",
-    "source": "Service des contributions NE, Coefficients communaux 2024–2026 (HTML, ne.ch)",
-    "canton": 1.24,
-    "start": "Années 2024 à 2026",
-    "row": " \\d+ (?P<name>[A-ZÉÈ][^\\d]*?) (?P<municipal>\\d+) \\d+ (?:\\d+|-)",
-    "notes": [
-      "church tax (voluntary contribution) not in the source"
-    ],
-    "subrows": true
-  },
-  "BL": {
-    "file": "BL.csv",
-    "source": "Statistisches Amt Basel-Landschaft, Steuerfüsse und Steuersätze nach Gemeinde und Jahr (offene Daten 10580, data.bl.ch)",
+  "UR": {
+    "file": "UR_gem.txt",
+    "source": "Kanton Uri, Steuerfüsse der Einwohnergemeinden ab 2009 (PDF, ur.ch), mit PDFKit in Text umgewandelt; Spalte 2026; Kirchensteuer: Steuerfüsse der Kirchgemeinden ab 2009 (PDF, ur.ch)",
     "canton": 1.0,
-    "csv": true,
-    "delimiter": ";",
-    "row": "^2026 \\d+ (?P<name>[^\\d\\n]+?) Steuerfuss_natürliche_Personen_Prozent (?P<municipal>[\\d.]+)$",
+    "blocks": true,
+    "group": "municipal",
+    "start": "2025 2026",
     "notes": [
-      "municipal share only; church tax rates are set per Kirchgemeinde and not in the source"
-    ]
-  },
-  "SH": {
-    "file": "SH_rows.txt",
-    "source": "Steuerverwaltung Schaffhausen, Steuerfüsse 2026 (PDF, sh.ch), mit pdf2txt.swift --rows in Text umgewandelt",
-    "canton": 0.76,
-    "row": "^(?P<name>[A-ZÄÖÜ][^\\d\\n]*?) (?P<municipal>\\d+) \\d+ (?:[A-Za-z]+)?(?P<reformed>[\\d.]+)(?:/[A-Za-z]+[\\d.]+ [a-e]\\))? (?P<catholic>[\\d.]+) (?P<christ>[\\d.]+)$",
-    "notes": [
-      "two reformed Kirchgemeinden (e.g. «SH13/H13»): the first one taken"
-    ]
-  },
-  "AI": {
-    "file": "AI.pdf",
-    "source": "Kantonale Steuerverwaltung AI, Steuerfüsse der verschiedenen Körperschaften, Stand 2026 (PDF, ai.ch)",
-    "canton": 0.96,
+      "reformed: one cantonal church, 115 % (Ev.-ref. Landeskirche Uri, same list)"
+    ],
+    "also": [
+      {
+        "file": "UR_kirche.txt",
+        "blocks": true,
+        "group": "catholic",
+        "start": "2025 2026",
+        "aliases": {
+          "Gurtnellen-Dorf": "Gurtnellen"
+        }
+      }
+    ],
     "fixed": {
+      "reformed": 1.15,
+      "christ": 0.0
+    }
+  },
+  "VD": {
+    "reader": "vd",
+    "file": "VD.csv",
+    "source": "Canton de Vaud, Arrêtés d'imposition 2026 (Excel, vd.ch), als CSV gespeichert",
+    "canton": 1.55,
+    "fixed": {
+      "reformed": 0.0,
+      "catholic": 0.0,
+      "christ": 0.0
+    }
+  },
+  "VS": {
+    "file": "VS_rows.txt",
+    "source": "Service cantonal des contributions VS, Coefficients et indexations des communes 2022–2027 (PDF, vs.ch), mit pdf2txt.swift --rows in Text umgewandelt",
+    "canton": 1.0,
+    "scale": 1.0,
+    "notes": [
+      "church tax (impôt de culte) only in a few municipalities, as exceptions; elsewhere the municipality pays the costs of worship"
+    ],
+    "rows": [
+      "^\\d+ (?P<name>[^\\d\\n(]+?)(?: \\([^)]*\\))? (?:[\\d.]+ \\d+% ){4}(?P<municipal>[\\d.]+) \\d+%",
+      "(?P<name>Goms) \\([^)]*\\n\\d+ [^)]*\\) (?:[\\d.]+ \\d+% ){4}(?P<municipal>[\\d.]+) \\d+%"
+    ],
+    "fixed": {
+      "reformed": 0.0,
+      "catholic": 0.0,
+      "christ": 0.0
+    }
+  },
+  "ZG": {
+    "file": "ZG.pdf",
+    "source": "Steuerverwaltung Zug, Steuerfüsse der Gemeinden 2023–2026 (PDF, zg.ch, 21.1.2026)",
+    "canton": 0.78,
+    "start": "% % % %",
+    "end": "Evangelisch-reformierte",
+    "row": "^(?P<name>[A-ZÄÖÜ][^\\d\\n]*?)\\s+[\\d.]+ [\\d.]+ [\\d.]+ (?P<municipal>[\\d.]+) [\\d.]+ [\\d.]+ [\\d.]+ (?P<catholic>[\\d.]+)",
+    "fixed": {
+      "reformed": 0.06,
       "christ": 0.0
     },
-    "rows": [
-      "(?s)Bezirke\\n(?P<name>Appenzell) (?P<municipal>\\d+) .*?\\nAppenzell kath\\. (?P<catholic>\\d+) .*?\\nAppenzell prot\\. (?P<reformed>\\d+) .*?Schulgemeinden\\nAppenzell (?P<municipal_add>\\d+)",
-      "(?s)\\n(?P<name>Schwende-Rüte) (?P<municipal>\\d+) .*?\\nSchwende kath\\. (?P<catholic>\\d+) .*?\\nAppenzell prot\\. (?P<reformed>\\d+) .*?Schulgemeinden.*?\\nSchwende (?P<municipal_add>\\d+)",
-      "(?s)\\n(?P<name>Schlatt-Haslen) (?P<municipal>\\d+) .*?\\nHaslen kath\\. (?P<catholic>\\d+) .*?\\nAppenzell prot\\. (?P<reformed>\\d+) .*?Schulgemeinden.*?\\nSchlatt-Haslen (?P<municipal_add>\\d+)",
-      "(?s)Bezirke\\n.*?\\n(?P<name>Gonten) (?P<municipal>\\d+) .*?\\nGonten kath\\. (?P<catholic>\\d+) .*?\\nAppenzell prot\\. (?P<reformed>\\d+) .*?Schulgemeinden.*?\\nGonten (?P<municipal_add>\\d+)",
-      "(?s)Bezirke\\n.*?\\n(?P<name>Oberegg) (?P<municipal>\\d+) .*?\\nOberegg kath\\. (?P<catholic>\\d+) .*?\\nReute prot\\. (?P<reformed>\\d+) "
-    ],
     "notes": [
-      "municipal share: district + school (Oberegg: district only); Kirchgemeinde chosen by name, Protestants of the inner districts in Appenzell, of Oberegg in Reute"
+      "reformed: one Kirchgemeinde for the canton, 6 % in 2026"
     ]
   },
-  "BS": {
-    "file": "BS.html",
-    "source": "Steuerverwaltung Basel-Stadt, Steuerrechner, Steuerfüsse (Stand 2026) (HTML, bs.ch)",
-    "canton": 0.5,
-    "start": "Steuerfüsse (Stand 2026)",
-    "row": "(?:Stadt|Gemeinde) (?P<name>Basel|Riehen|Bettingen)\\*? (?P<municipal>[\\d.]+)% [\\d.]+%",
-    "notes": [
-      "income: the first block; church tax not on the page"
-    ]
-  },
-  "SO": {
-    "file": "SO_rows.txt",
-    "source": "Amt für Gemeinden SO, Statistische Mitteilung Steuern und Gebühren 2026 (PDF, so.ch), mit pdf2txt.swift --rows in Text umgewandelt",
-    "canton": 1.04,
-    "start": "Gemeinde 2025 2026 Ver-",
-    "end": "Tabelle: Steuerfüsse juristische Personen",
-    "row": "(?P<name>[A-ZÄÖÜ][^\\d\\n*+]*?(?:-\\n[^\\d\\n*+]*?)?) \\d+(?:\\.\\d)?\\*? (?P<municipal>\\d+(?:\\.\\d)?)\\**(?= |$)",
-    "subrows": true,
-    "notes": [
-      "municipal share only; church tax in separate tables; «**»: rate not yet decided, previous year"
-    ],
-    "skip": "Bezirk"
+  "ZH": {
+    "reader": "zh",
+    "file": "ZH.csv",
+    "source": "Statistisches Amt Kanton Zürich, Steuerfüsse der Zürcher Gemeinden, aktuell (offene Daten, opendata.swiss)",
+    "canton": 0.95,
+    "notes": []
   }
 }

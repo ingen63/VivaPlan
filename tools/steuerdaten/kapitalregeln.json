@@ -48,13 +48,9 @@
   },
   "GE": {
     "kind": "income",
-    "share": 0.1774,
-    "municipal": {
-      "kind": "income",
-      "share": 0.2
-    },
-    "text": "ein Fünftel der Steuer nach dem Einkommenstarif (Kantonssteuer leicht tiefer)",
-    "source": "LIPP GE Art. 45 Abs. 2 (rsGE D 3 08); tieferer Anteil der Kantonssteuer aus den ESTV-Rechnungen abgeleitet"
+    "share": 0.2,
+    "text": "ein Fünftel der Steuer nach dem Einkommenstarif",
+    "source": "LIPP GE Art. 45 Abs. 2 (rsGE D 3 08): Satz eines Fünftels des Tarifs von Art. 41, für Kanton und Gemeinden"
   },
   "GL": {
     "kind": "table",
@@ -139,17 +135,11 @@
   },
   "TI": {
     "kind": "income",
-    "divisor": 10,
+    "divisor": 19.7,
     "min": 0.02,
     "max": 0.03,
-    "single": {
-      "share": 0.4356
-    },
-    "married": {
-      "share": 0.4292
-    },
-    "text": "Anteil des Satzes für einen Zehntel des Bezugs, zwischen 2 % und 3 %",
-    "source": "LT TI Art. 38 Abs. 2 (RL 640.100, stato 1.1.2026); Umrechnung auf eine Jahresleistung aus den ESTV-Rechnungen abgeleitet"
+    "text": "Satz für die entsprechende Jahresleistung (Rentenumwandlung, Alter 65), zwischen 2 % und 3 %",
+    "source": "LT TI Art. 38 Abs. 2 (RL 640.100, stato 1.1.2026); Jahresleistung nach der Umwandlungstabelle im Anhang der Circolare DC TI n. 3/2006 (Alter 65, Tabelle der Männer: 50.77 Fr. je 1000 Fr., also Divisor 19.70)"
   },
   "UR": {
     "kind": "table",

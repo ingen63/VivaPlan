@@ -267,13 +267,17 @@ class ReadCantons(unittest.TestCase):
         path = os.path.join(folder, "kantone.json")
         with open(path, "w", encoding="utf-8") as f:
             json.dump(specs, f)
-        out = steuerfuesse.read_cantons(path, folder, TABLE_REF)
+        specs = steuerfuesse.read_specs(path)
+        self.assertEqual(sorted(specs), ["XA", "XB"])
+        register = [m[:3] for m in TABLE_REF]
+        out = steuerfuesse.collect(specs, folder, register, 2026)
         self.assertEqual([c for c, *_ in out], ["XA"])
-        _, matched, unmatched, notes = out[0]
+        _, matched, wealth, unmatched, notes = out[0]
         self.assertEqual({b: v[0] for b, v in matched.items()}, {9301: "Seeberg", 9302: "Talheim", 9303: "Berg am See"})
         self.assertEqual(matched[9301][2], ["test", "further rows for parts: Seeberg-Nord"])
+        self.assertEqual(wealth[9302], [1.0, 1.1, None, None, None])
         self.assertEqual((unmatched, notes), ([], ["rows not compared (Kirchgemeinden or parts): Ostdorf"]))
-        self.assertEqual(steuerfuesse.read_cantons(path, folder, TABLE_REF, ["XB"]), [])
+        self.assertEqual(steuerfuesse.collect(specs, folder, register, 2026, only=["XB"]), [])
         ref = write(json.dumps({"year": 2026, "municipalities": TABLE_REF}), ".json")
         out = io.StringIO()
         with redirect_stdout(out):
@@ -287,7 +291,7 @@ class ReadCantons(unittest.TestCase):
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "quellen", "2026", "kantone.json")
         with open(path, encoding="utf-8") as f:
             specs = json.load(f)
-        self.assertEqual(len(specs), 21)  # ZH, BE, GE, VD and FR have their own readers
+        self.assertEqual(len(specs), 26)
         for canton, spec in specs.items():
             self.assertTrue(spec["source"] and spec["file"] and spec["canton"] > 0, canton)
             for row in spec.get("rows") or [spec.get("row", "")]:
@@ -323,6 +327,34 @@ class ParishesAndExceptions(unittest.TestCase):
         self.assertEqual(len(source), 2)
 
 
+REGISTER_CSV = ("HistoricalCode,BfsCode,ValidFrom,ValidTo,Level,Parent,Name,ShortName\n"
+                "1,1,12.09.1848,,1,,Zürich,ZH\n"
+                "9301,101,12.09.1848,,2,1,Bezirk See,See\n"
+                "15001,9001,01.01.2000,,3,9301,Seedorf,Seedorf\n"
+                "9301,9002,01.01.2000,,3,9301,Bachtal,Bachtal\n")
+
+
+class Register(unittest.TestCase):
+    # #285/AK5: municipalities and their canton from the BFS register (codes repeat across the levels).
+    def test_issue_285_ak5_bfs_register(self):
+        path = write(REGISTER_CSV, ".csv")
+        self.assertEqual(steuerfuesse.read_register(path), [[9001, "Seedorf", "ZH"], [9002, "Bachtal", "ZH"]])
+        os.unlink(path)
+
+    # #285/AK3: every municipality of the register needs a row; a church share without a source counts as 0 and is
+    # reported; a missing municipality is reported.
+    def test_issue_285_ak3_multipliers(self):
+        register = [[9001, "Seedorf", "ZH"], [9002, "Bachtal", "ZH"], [9003, "Hügelwil", "ZH"]]
+        income = {9001: ("Seedorf", [0.95, 1.1, 0.11, None, 0.14], []),
+                  9002: ("Bachtal", [0.95, None, 0.1, 0.1, 0.1], [])}
+        wealth = {9001: [0.95, 1.1, 0.11, 0.2, 0.14]}
+        munis, report = steuerfuesse.multipliers([("ZH", income, wealth, [], [])], register)
+        self.assertEqual(munis, [[9001, "Seedorf", "ZH", [0.95, 1.1, 0.11, 0.0, 0.14], [0.95, 1.1, 0.11, 0.2, 0.14]]])
+        self.assertEqual(report, ["ZH 9001 Seedorf: no rate in the sources for catholic, 0 taken",
+                                  "ZH 9002 Bachtal: no municipal tax multiplier in the sources",
+                                  "ZH 9003 Hügelwil: no tax multipliers in the sources"])
+
+
 class Compare(unittest.TestCase):
     # #285/AK2: the comparison names every differing value, missing municipalities and notes.
     def test_issue_285_ak2_compare(self):
@@ -347,7 +379,9 @@ class Compare(unittest.TestCase):
         with redirect_stdout(out):
             code = steuerfuesse.main([ref, "--zh", zh])
         self.assertEqual(code, 1)
-        self.assertIn("ZH: 1 of 3 municipalities equal, 2 differences or gaps", out.getvalue())
+        # the wealth multipliers are compared as well (here the same as for income)
+        self.assertIn("ZH 9002 Bachtal: wealth catholic 0.12 (reference 0.13)", out.getvalue())
+        self.assertIn("ZH: 1 of 3 municipalities equal, 3 differences or gaps", out.getvalue())
         with redirect_stdout(io.StringIO()):
             self.assertEqual(steuerfuesse.main([ref]), 0)
         ge, vd, fr = write(GE_HTML, ".htm"), write(VD_CSV, ".csv"), write(FR_CSV, ".csv")

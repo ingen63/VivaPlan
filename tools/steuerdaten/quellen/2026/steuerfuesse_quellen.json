@@ -1,0 +1,412 @@
+{
+  "_comment": "#285: every file from which the tax multipliers of steuern-2026.json are built, with address, retrieval date and SHA-256; derived files with the command that made them. Checked by tools/steuerdaten/nachweis.py.",
+  "quellen": [
+    {
+      "datei": "AG.pdf",
+      "url": "https://www.ag.ch/media/kanton-aargau/dfr/dokumente/steuern/natuerliche-personen/steuerberechnung-tarife-natuerliche-personen/gemeinde-und-kirchensteuerf-sse-2026-v5.pdf",
+      "abgerufen": "2026-11-28",
+      "sha256": "530aad3d424c3b5bfc8dcbaf7630ca40a147e217758fa7b2d583326e4a7f3da6",
+      "herausgeber": "Kantonales Steueramt Aargau, Verzeichnis der Gemeinde- und Kirchensteuerfüsse 2026 (v5)",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "AI.pdf",
+      "url": "https://ai-api.webcloud7.ch/themen/steuern/publikationen/504937da83424b3887dc4a0ccad377b7/steuerfuesse-der-verschiedenen-koerperschaften-stand-2021.pdf/@@download/file/Steuerf%C3%BCsse%20der%20verschiedenen%20K%C3%B6rperschaften%20-%20Stand%202026.pdf",
+      "abgerufen": "2026-11-28",
+      "sha256": "b3962f179cc97006ac39abb3b8b2ebe15febf117d4890983365ae7b57bcdd673",
+      "herausgeber": "Kantonale Steuerverwaltung AI, Steuerfüsse der verschiedenen Körperschaften, Stand 2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "AR.pdf",
+      "url": "https://ar.ch/fileadmin/user_upload/Departement_Finanzen/Steuerverwaltung/Bibliothek/2026/Steuerfuesse_2026.pdf",
+      "abgerufen": "2026-11-28",
+      "sha256": "34b9d573d5d57ce3cb8bf99e9d8189822727d8f55757019da83ba4c509027b5d",
+      "herausgeber": "Kantonale Steuerverwaltung Appenzell Ausserrhoden, Steuerfüsse 2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "BE.pdf",
+      "url": "https://www.fin.be.ch/content/dam/fin/dokumente/de/finanzverwaltung/finanzausgleich/publikationen/fv-stat-steueranlage_2026_1.pdf",
+      "abgerufen": "2026-11-28",
+      "sha256": "ada779d1970ba2f16626af7aa81adff432dc6f84e4111f6396e5bbe74612146d",
+      "herausgeber": "Finanzverwaltung Kanton Bern, Steueranlagen der Gemeinden und Steuersätze der Kirchgemeinden 2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "BL.csv",
+      "url": "https://data.bl.ch/api/explore/v2.1/catalog/datasets/10580/exports/csv?delimiter=%3B",
+      "abgerufen": "2026-11-28",
+      "sha256": "81e46aeb184e5fb0170b1f42b0608e5d5d8c6d77cb945ebe283267159f9de056",
+      "herausgeber": "Amt für Daten und Statistik BL, Steuerfüsse und Steuersätze nach Gemeinde und Jahr (10580)",
+      "art": "offene Daten",
+      "nutzung": "Freie Nutzung, Quellenangabe Pflicht (opendata.swiss terms_by)"
+    },
+    {
+      "datei": "BS.html",
+      "url": "https://www.bs.ch/themen/arbeit-und-steuern/steuererklaerung/steuerrechner",
+      "abgerufen": "2026-11-28",
+      "sha256": "05bdabcb75dd57513d07614439b772e7785b11a117a9ad598cedffeec7388163",
+      "herausgeber": "Steuerverwaltung Basel-Stadt, Steuerfüsse (Stand 2026)",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "BS_erk_steuerordnung.pdf",
+      "url": "https://www.erk-bs.ch/dok/11788",
+      "abgerufen": "2026-11-28",
+      "sha256": "871c65662a916b90068994bf3d2c68eeeb0f21c145bfe34fa64037f61b9dc6a3",
+      "herausgeber": "Evangelisch-reformierte Kirche Basel-Stadt, Steuerordnung (§ 34)",
+      "art": "Erlass einer öffentlich-rechtlichen Körperschaft",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "FR.csv",
+      "url": "https://opendata.fr.ch/api/explore/v2.1/catalog/datasets/18_03_coefficients/exports/csv?delimiter=%3B",
+      "abgerufen": "2026-11-28",
+      "sha256": "20815a16666d0937cece41d3532bc2e1dca5b0b9128f380577c34a5f7e4eb0e6",
+      "herausgeber": "Service des communes FR, Coefficients et taux d'impôts par commune (18_03_coefficients)",
+      "art": "offene Daten",
+      "nutzung": "CC BY-SA 4.0"
+    },
+    {
+      "datei": "FR_Heitenried.html",
+      "url": "https://www.heitenried.ch/steuerfuss",
+      "abgerufen": "2026-11-28",
+      "sha256": "9e79383faeeb383131d8b2fab461c5863c488386b72a1171d89caf7f99e2adc6",
+      "herausgeber": "Gemeinde Heitenried, Steuerfuss 2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "FR_Mezieres_GV.pdf",
+      "url": "https://www.mezieres-fr.ch/assets/idm_medias/d02826624746b4b21a15b0c0bfd503a2.pdf",
+      "abgerufen": "2026-11-28",
+      "sha256": "7f3a70570738c5051cd19f008be68eabfffc090c1df93ae5daf805cac138187a",
+      "herausgeber": "Commune de Mézières (FR), procès-verbal de l'assemblée communale du 10.12.2025",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "FR_kath.pdf",
+      "url": "https://www.fr.ch/document/602756",
+      "abgerufen": "2026-11-28",
+      "sha256": "1fa6d14a7f751dd4ab1300313115ad381038683b4fb6bb04c44069a178f3b49d",
+      "herausgeber": "Service cantonal des contributions FR, Coefficients d'impôt des paroisses catholiques 2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "FR_ref.pdf",
+      "url": "https://www.fr.ch/de/document/602761",
+      "abgerufen": "2026-11-28",
+      "sha256": "f14ddee84f41450f28e0e477a7d287a1c555050fe8dfb425d6272181fa58d1c1",
+      "herausgeber": "Service cantonal des contributions FR, Coefficients d'impôt des paroisses réformées 2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "GE.htm",
+      "url": "https://silgeneve.ch/legis/data/rsg_d3_05p30.htm",
+      "abgerufen": "2026-11-28",
+      "sha256": "cabbbdcd459016bfc544b9b04f4972b8a17a97a38fcdb1c609ca65bfcee094e6",
+      "herausgeber": "Conseil d'État GE, ArCA-2026 (RSG D 3 05.30)",
+      "art": "amtlicher Erlass",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "GE_LCACant_D3_07.htm",
+      "url": "https://silgeneve.ch/legis/data/rsg_d3_07.htm",
+      "abgerufen": "2026-11-28",
+      "sha256": "dbe6eac7fcfd400ad59ebfec1888e7da7ec566f25064c4c06334e1aa38412cb9",
+      "herausgeber": "Loi sur les centimes additionnels cantonaux (RSG D 3 07)",
+      "art": "amtlicher Erlass",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "GE_calculette_ipc_2026.xlsx",
+      "url": "https://www.ge.ch/document/43113/telecharger",
+      "abgerufen": "2026-11-28",
+      "sha256": "31afff65304ad9e6f60f5dcc72f045abf1793241f587766ef49139f7d5b02779",
+      "herausgeber": "AFC GE, Calcul de l'impôt sur les prestations en capital 2026 (calculette IPC); nur zur Bestätigung der Regel D 3 06 Art. 1 / LCACant Art. 2, keine Zahl übernommen",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "GL.pdf",
+      "url": "https://www.gl.ch/public/upload/assets/65564/091%20Gemeindezuschl%C3%A4ge%202026.pdf?fp=2",
+      "abgerufen": "2026-11-28",
+      "sha256": "36b024789cf2e34661fe5df92d85ea7a8279ffa96a641d648b0dfcb43e5d2283",
+      "herausgeber": "Kantonale Steuerverwaltung Glarus, Gemeinde- und Kirchensteuer 2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "GR.pdf",
+      "url": "https://www.gr.ch/DE/institutionen/verwaltung/dfg/stv/berechnen/Documents/gemeindesteuerfuesse2026.pdf",
+      "abgerufen": "2026-11-28",
+      "sha256": "61f42a905d3f21892f7ab2a28a5529ab0840f7cc3a193db0bbc6a7baee5f8938",
+      "herausgeber": "Steuerverwaltung Graubünden, Gemeinde- und Kirchensteuerfüsse 2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "JU.pdf",
+      "url": "https://www.jura.ch/Htdocs/Files/v/df8873b29ac94b19ca37ba3cd2342e441d1d36d69901ca072f0552c0edab3822.pdf/quotites_2026.pdf?download=1",
+      "abgerufen": "2026-11-28",
+      "sha256": "852214a934d41950f23be72c50d37f9cfb45f477d50d10d92acd97f9315ac757",
+      "herausgeber": "Service des contributions JU, Quotités d'impôt des communes et taux d'impôts 2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "LU.html",
+      "url": "https://steuern.lu.ch/publikationen/nav_einheiten_tarife/stnap_steuereinheiten_2026",
+      "abgerufen": "2026-11-28",
+      "sha256": "a9188f2093a2f38f2b5fa61b0131dbcff107f9f1d3681a385dfb07f5364b79ad",
+      "herausgeber": "Dienststelle Steuern Luzern, Gemeindeübersicht Steuereinheiten 2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "NE.html",
+      "url": "https://www.ne.ch/themes/impots/coefficients-et-baremes",
+      "abgerufen": "2026-11-28",
+      "sha256": "63e2c66d453b32acf8951b8df03820801a6dce2fbad97030183c507a53d4031c",
+      "herausgeber": "Service des contributions NE, Coefficients et barèmes",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "NW.pdf",
+      "url": "https://www.steuern-nw.ch/app/uploads/2025/12/NW-1173433-v1-Steuerfuesse_2026.pdf",
+      "abgerufen": "2026-11-28",
+      "sha256": "b6cc7eb14b2a17852bfeeda301255efe3e349e3ff619c702729f42aa7d087111",
+      "herausgeber": "Kantonales Steueramt Nidwalden, Steuerfüsse 2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "OW.html",
+      "url": "https://www.ow.ch/publikationen/8258",
+      "abgerufen": "2026-11-28",
+      "sha256": "420b545b28d0ce4c816a4cf7bdf45f116e6b667448fc6e69ae247e32b2625d26",
+      "herausgeber": "Kanton Obwalden, Steuerfüsse 2001–2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "SG.pdf",
+      "url": "https://www.sg.ch/content/dam/sgch/steuern-finanzen/steuern/formulare-und-wegleitungen/einkommens-und-vermoegenssteuer/tarife-und-steuerfuesse/steuerfuesse-st-gallische-gemeinden/Steuerf%C3%BCsse%202026%20f%C3%BCr%20Versand.pdf",
+      "abgerufen": "2026-11-28",
+      "sha256": "abde299107d3d935068f77e975bbbca183544d96c43c03a1074075126e2699cb",
+      "herausgeber": "Kantonales Steueramt St. Gallen, Steuerfüsse der Gemeinden 2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "SH.pdf",
+      "url": "https://sh.ch/CMS/get/file/7a9bb85b-3d02-4076-bec3-9f9936e71009",
+      "abgerufen": "2026-11-28",
+      "sha256": "21a3835c144714014749e392902b74b61f09dbdb48e4089e840884956257ec4e",
+      "herausgeber": "Kantonale Steuerverwaltung Schaffhausen, Steuerfüsse 2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "SO.pdf",
+      "url": "https://so.ch/fileadmin/internet/vwd/vwd-agem/pdf/Gemeindefinanzen/Statistik/2026/Statistische_Mitteilung_Steuern_und_Gebuehren_2026_V3.0.pdf",
+      "abgerufen": "2026-11-28",
+      "sha256": "9bbfb8f43b28318f72092b07ead97ab354259e6a897571e5a3275df94757c8d5",
+      "herausgeber": "Amt für Gemeinden SO, Statistische Mitteilung Steuern und Gebühren 2026 (Tabelle 4.4 nennt den ESTV-Steuerrechner als Quelle, Entscheid #285)",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "SO_Dornach_RRB.html",
+      "url": "https://so.ch/verwaltung/staatskanzlei/medien/medienarchiv-2026/juni/juni-2026/news/einwohnergemeinde-dornach-regierungsrat-beschliesst-budget/",
+      "abgerufen": "2026-11-28",
+      "sha256": "6e2410c29a5e32f65ec0dc362784de0c051baab19706216f558ea12121a39329",
+      "herausgeber": "Staatskanzlei SO, Medienmitteilung 30.6.2026 (Dornach 92 %)",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "SZ.pdf",
+      "url": "https://www.sz.ch/public/upload/assets/90947/Steuerfusstabelle_2026.pdf?fp=4",
+      "abgerufen": "2026-11-28",
+      "sha256": "707684dd2cd98cb702c53ed34ebb2b489a632a638d221fdc9ee613a9e58c5019",
+      "herausgeber": "Steuerverwaltung Schwyz, Steuerfusstabelle 2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "TG_sk-stat-70.csv",
+      "url": "https://data.tg.ch/api/explore/v2.1/catalog/datasets/sk-stat-70/exports/csv?delimiter=%3B",
+      "abgerufen": "2026-11-28",
+      "sha256": "c72ff60d37a27e72130a27cb0b7fe9c0fb4baadc83b440b973959cf02226742b",
+      "herausgeber": "Amt für Daten und Statistik Thurgau, Gesamtsteuerfüsse der Thurgauer Gemeinden (sk-stat-70)",
+      "art": "offene Daten",
+      "nutzung": "CC0 1.0"
+    },
+    {
+      "datei": "TI.html",
+      "url": "https://www4.ti.ch/dfe/dc/sportello/moltiplicatori-comunali/?tendina=523",
+      "abgerufen": "2026-11-28",
+      "sha256": "a769d0b172aa62de5cf954e76834785b8fa5365812f4d2d0fb645b0c230148fa",
+      "herausgeber": "Divisione delle contribuzioni TI, Moltiplicatori d'imposta comunali",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "TI_circolare_2006_03.pdf",
+      "url": "https://m4.ti.ch/fileadmin/DFE/DC/DOC-CIRC/circ_2006_03.pdf",
+      "abgerufen": "2026-11-28",
+      "sha256": "3f853281e36a150b68993608a4209de14cb5a1e5118c2b31ea18887d2026da15",
+      "herausgeber": "Divisione delle contribuzioni TI, Circolare n. 3/2006 mit Umwandlungstabelle (Kapitalleistungen, kapitalregeln.json)",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "UR_gem.pdf",
+      "url": "https://www.ur.ch/_doc/439292",
+      "abgerufen": "2026-11-28",
+      "sha256": "6c288ede97185fb1c524f294e84a9081d6e436010cec5356707ce8b5b4d818cc",
+      "herausgeber": "Kanton Uri, Steuerfüsse der Einwohnergemeinden ab 2009",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "UR_kirche.pdf",
+      "url": "https://www.ur.ch/_doc/439280",
+      "abgerufen": "2026-11-28",
+      "sha256": "b901feb74ca9d13aed43005065b58fa6c45e25797a2ae20092f2e0878ad832ea",
+      "herausgeber": "Kanton Uri, Steuerfüsse der Kirchgemeinden ab 2009",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "VD.xls",
+      "url": "https://www.vd.ch/fileadmin/user_upload/themes/territoire/communes/finances_communales/fichiers_xls/Arr%C3%AAt%C3%A9s_d_imposition_2026.xls",
+      "abgerufen": "2026-11-28",
+      "sha256": "e7e04fc78b69a08c09d160afd1083a2291c08fc8b53b3b4726d7bee273cc260a",
+      "herausgeber": "Canton de Vaud, Tableau des arrêtés d'imposition 2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "VS.pdf",
+      "url": "https://www.vs.ch/documents/508074/628286/Coefficients_Indexations_Communes_2022-2027.pdf/53d0770a-3e87-6d30-03d7-011ca4c7a3e0",
+      "abgerufen": "2026-11-28",
+      "sha256": "a8e2c5aaabeb0469556d58f267dee84b79b04cff419380a2b71a8f23369539a1",
+      "herausgeber": "Service cantonal des contributions VS, Coefficients et indexations des communes 2022–2027",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "VS_Saxon_reglement_culte.pdf",
+      "url": "https://www.saxon.ch/wp-content/uploads/2018/10/24-regle_culte_23.pdf",
+      "abgerufen": "2026-11-28",
+      "sha256": "80d19b8b2567932b06ec2b52504e23850c6caaddbc2e5e190c28a0725dbb4855",
+      "herausgeber": "Commune de Saxon, règlement sur l'impôt du culte",
+      "art": "amtlicher Erlass",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "VS_Saxon_tarifs.pdf",
+      "url": "https://www.saxon.ch/wp-content/uploads/2021/06/tarifs-communaux-1.pdf",
+      "abgerufen": "2026-11-28",
+      "sha256": "d8de553f217b26ba93230b930354c0dabf107ffb955cb8c54b9526668a93d26a",
+      "herausgeber": "Commune de Saxon, tarifs communaux (impôt du culte 2,5 %)",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "ZG.pdf",
+      "url": "https://cdn.zg.ch/dam/jcr:24fb8832-3383-4718-9a48-9461bc7501fc/Steuerf%C3%BCsse%202026_effektiv%2021.1.26.pdf",
+      "abgerufen": "2026-11-28",
+      "sha256": "8ca1615cef348ee5140e0401a0f36ab0c383baf8c2d48417a6f183a54c1ab4c9",
+      "herausgeber": "Steuerverwaltung Zug, Steuerfüsse der Gemeinden 2023–2026",
+      "art": "amtliche Veröffentlichung",
+      "nutzung": "amtliche Veröffentlichung einer Behörde (Art. 5 Abs. 1 lit. a/c URG)"
+    },
+    {
+      "datei": "ZH.csv",
+      "url": "https://www.web.statistik.zh.ch/ogd/data/steuerfuesse/kanton_zuerich_stf_aktuell.csv",
+      "abgerufen": "2026-11-28",
+      "sha256": "741392e13fb7bf9bb1a74ca0ebf80d12185e0cd4146dc5bc793c57d7c58b4f0b",
+      "herausgeber": "Statistisches Amt Kanton Zürich, Steuerfüsse der Zürcher Gemeinden, aktuell",
+      "art": "offene Daten",
+      "nutzung": "Freie Nutzung, Quellenangabe Pflicht (opendata.swiss terms_by)"
+    },
+    {
+      "datei": "gemeinden.csv",
+      "url": "https://www.agvchapp.bfs.admin.ch/api/communes/snapshot?date=01-01-2026",
+      "abgerufen": "2026-11-28",
+      "sha256": "e0748c06c754dbde20f04425a7f58c2a718e77982ea10fb8f969ac9d21a83b7d",
+      "herausgeber": "Bundesamt für Statistik (BFS), Amtliches Gemeindeverzeichnis, Stand 1.1.2026",
+      "art": "offene Daten",
+      "nutzung": "Freie Nutzung (opendata.swiss terms_open)"
+    }
+  ],
+  "abgeleitet": [
+    {
+      "datei": "GR_rows.txt",
+      "aus": "GR.pdf",
+      "befehl": "swift tools/steuerdaten/pdf2txt.swift --rows GR.pdf",
+      "sha256": "e1c0207109cdf83e72d55a41896fb4ed27d1e83e4fc4a3a9f7038552af221d7f"
+    },
+    {
+      "datei": "JU.txt",
+      "aus": "JU.pdf",
+      "befehl": "swift tools/steuerdaten/pdf2txt.swift JU.pdf",
+      "sha256": "428a573a854cc8ad3a547ae2e61a57e9fb7db14d4ce297cf868d384754c753f4"
+    },
+    {
+      "datei": "NW.txt",
+      "aus": "NW.pdf",
+      "befehl": "swift tools/steuerdaten/pdf2txt.swift NW.pdf",
+      "sha256": "8f2486849f090f39cd061ca83e2f04f275f9b6606c630eacab8b9d416e3f8104"
+    },
+    {
+      "datei": "SH_rows.txt",
+      "aus": "SH.pdf",
+      "befehl": "swift tools/steuerdaten/pdf2txt.swift --rows SH.pdf",
+      "sha256": "36781d86827ad9f205fd2a1472903a150efd1da53b3238a0235bb18b18be3e3f"
+    },
+    {
+      "datei": "SO_rows.txt",
+      "aus": "SO.pdf",
+      "befehl": "swift tools/steuerdaten/pdf2txt.swift --rows SO.pdf",
+      "sha256": "cf8bd5cc225f9fdda02d4311b3897ca76cbc8eb6bb72130045075c3821685e98"
+    },
+    {
+      "datei": "UR_gem.txt",
+      "aus": "UR_gem.pdf",
+      "befehl": "swift tools/steuerdaten/pdf2txt.swift UR_gem.pdf",
+      "sha256": "e6ba7531f13b9c03a3e10bbc4849c5cad8211d943262b6b0eb710f40394e81f9"
+    },
+    {
+      "datei": "UR_kirche.txt",
+      "aus": "UR_kirche.pdf",
+      "befehl": "swift tools/steuerdaten/pdf2txt.swift UR_kirche.pdf",
+      "sha256": "91001d0963b3a578d6aca183a841319a65f759b14981eb1e66ddd431af78e7f8"
+    },
+    {
+      "datei": "VD.csv",
+      "aus": "VD.xls",
+      "befehl": "LibreOffice: soffice --headless --convert-to csv VD.xls",
+      "sha256": "ef495296135f09c627ef08605ce0a9367d83bae5d12485eb8792bc488d1d8abc"
+    },
+    {
+      "datei": "VS_rows.txt",
+      "aus": "VS.pdf",
+      "befehl": "swift tools/steuerdaten/pdf2txt.swift --rows VS.pdf",
+      "sha256": "429ddf725690b95b67f38824e05bcbc1eb423f0071a8c5d7b3a8afb7eadbe9bb"
+    }
+  ]
+}
